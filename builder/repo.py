@@ -192,7 +192,7 @@ def prepare_archive(dockerfile, tmp_code_path, encoding="utf-8"):
     tarstream.seek(0)
     return archive
 
-def build_docker_image(tar_archive, tag, encoding="utf-8"):
+def build_docker_image(tar_archive, tag, labels, encoding="utf-8"):
     """
     Builds docker image with given build context in tar archive
     """
@@ -211,8 +211,13 @@ def build_docker_image(tar_archive, tag, encoding="utf-8"):
         'quiet': False, 
         'forcerm': True, 
         'rm': True, 
-        'decode': True
+        'decode': True,
+        'pull': True
     }
+
+    # Check if image exists locally
+    # repo_name = builder_img.split(':')[0]
+    # found_img = api_client.images(repo_name)
 
     try:
         logs = api_client.build(**args)

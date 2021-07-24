@@ -19,14 +19,20 @@ module_logger = logging.getLogger("builder")
 class ImageBuilderService(image_builder_pb2_grpc.ImageBuilderServicer):
     def Build(self, request, context):
         module_logger.info("Received build request...")
-        print(request)
-        print(context)
+        # print(request)
+        # print(context)
 
         parsed_url = urlparse(request.source)
         ignores = []
+        labels = {}
+
         if request.ignores:
             for ig in request.ignores:
                 ignores.append(ig.value)
+
+        if request.tags:
+            for tag in request.tags:
+                labels[tag.name] = tag.value
 
         if parsed_url.scheme == "file":
             tmp_path = os.path.join(tempfile.gettempdir(), "code")
@@ -50,18 +56,17 @@ class ImageBuilderService(image_builder_pb2_grpc.ImageBuilderServicer):
                 "pyversion": request.pyversion,
                 "resource": request.resource,
                 "entry": request.entry,
-                "tags": [{'Key': 'Project', 'Value': 'mnist'}, {'Key': 'Framework', 'Value': 'tensorflow-cpu-2.4.0'}],
+                "tags": labels,
                 "revision": request.revision
             }
 
-            a = pkg_resources.resource_filename("builder", "templates")
-            print("TEMPL DIR: > ", a)
-            dockerfile, builder_img = create_dockerfile(config, a, code_path, tmp_path, has_requirements=has_requirements, save_file=False)
+            tmpl_dir = pkg_resources.resource_filename("builder", "templates")
+            dockerfile, builder_img = create_dockerfile(config, tmpl_dir, code_path, tmp_path, has_requirements=has_requirements, save_file=False)
 
             build_context = prepare_archive(dockerfile, code_copy_path)
 
             tag = "{}/{}:{}".format(config["namespace"], config["name"], config["revision"])
-            build_docker_image(build_context, tag)
+            build_docker_image(build_context, tag, labels, builder_img)
 
             shutil.rmtree(tmp_path)
 
