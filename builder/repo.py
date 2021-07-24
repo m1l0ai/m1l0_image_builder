@@ -108,7 +108,6 @@ def create_dockerfile(config, tmpl_dir, code_dir, dockerfile_path, has_requireme
     """
     module_logger.info("[TrainJob] Creating dockerfile...")
 
-    # For multi-stage build
     proj_name = config['name']
     project_dir = '/opt/model'
     working_dir = '/opt/model/jobs'
@@ -223,7 +222,7 @@ def build_docker_image(tar_archive, tag, encoding="utf-8"):
                 raise APIError(res)
             else:
                 module_logger.info(res)
-                print(res)
+                # print(res)
     except ImageNotFound as e:
         module_logger.error("Error with building image: {}".format(e))
     except APIError as e:
