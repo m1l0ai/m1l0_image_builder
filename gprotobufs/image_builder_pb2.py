@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\x13image_builder.proto\"\xef\x01\n\x0c\x42uildRequest\x12\n\n\x02id\x18\x01 \x01(\x05\x12\x11\n\tnamespace\x18\x02 \x01(\t\x12\x0c\n\x04name\x18\x03 \x01(\t\x12\x11\n\tframework\x18\x04 \x01(\t\x12\x0f\n\x07version\x18\x05 \x01(\t\x12\x11\n\tpyversion\x18\x06 \x01(\t\x12\x10\n\x08resource\x18\x07 \x01(\t\x12\r\n\x05\x65ntry\x18\x08 \x01(\t\x12\x10\n\x08revision\x18\t \x01(\x05\x12\x0e\n\x06source\x18\n \x01(\t\x12\x1e\n\x07ignores\x18\x0b \x03(\x0b\x32\r.BuildIgnores\x12\x18\n\x04tags\x18\x0c \x03(\x0b\x32\n.BuildTags\"\x1d\n\x0c\x42uildIgnores\x12\r\n\x05value\x18\x01 \x01(\t\"(\n\tBuildTags\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t\"<\n\rBuildResponse\x12\n\n\x02id\x18\x01 \x01(\x05\x12\r\n\x05image\x18\x02 \x01(\t\x12\x10\n\x08\x65\x63r_name\x18\x03 \x01(\t26\n\x0cImageBuilder\x12&\n\x05\x42uild\x12\r.BuildRequest\x1a\x0e.BuildResponseb\x06proto3'
+  serialized_pb=b'\n\x13image_builder.proto\"\x94\x02\n\x0c\x42uildRequest\x12\n\n\x02id\x18\x01 \x01(\x05\x12\x11\n\tnamespace\x18\x02 \x01(\t\x12\x0c\n\x04name\x18\x03 \x01(\t\x12\x11\n\tframework\x18\x04 \x01(\t\x12\x0f\n\x07version\x18\x05 \x01(\t\x12\x11\n\tpyversion\x18\x06 \x01(\t\x12\x10\n\x08resource\x18\x07 \x01(\t\x12\r\n\x05\x65ntry\x18\x08 \x01(\t\x12\x10\n\x08revision\x18\t \x01(\x05\x12\x0e\n\x06source\x18\n \x01(\t\x12\x0f\n\x07service\x18\x0b \x01(\t\x12\x12\n\nrepository\x18\x0c \x01(\t\x12\x1e\n\x07ignores\x18\r \x03(\x0b\x32\r.BuildIgnores\x12\x18\n\x04tags\x18\x0e \x03(\x0b\x32\n.BuildTags\"\x1d\n\x0c\x42uildIgnores\x12\r\n\x05value\x18\x01 \x01(\t\"(\n\tBuildTags\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t\"2\n\rBuildResponse\x12\r\n\x05image\x18\x01 \x01(\t\x12\x12\n\nrepository\x18\x02 \x01(\t26\n\x0cImageBuilder\x12&\n\x05\x42uild\x12\r.BuildRequest\x1a\x0e.BuildResponseb\x06proto3'
 )
 
 
@@ -104,15 +104,29 @@ _BUILDREQUEST = _descriptor.Descriptor(
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='ignores', full_name='BuildRequest.ignores', index=10,
-      number=11, type=11, cpp_type=10, label=3,
+      name='service', full_name='BuildRequest.service', index=10,
+      number=11, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='repository', full_name='BuildRequest.repository', index=11,
+      number=12, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='ignores', full_name='BuildRequest.ignores', index=12,
+      number=13, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='tags', full_name='BuildRequest.tags', index=11,
-      number=12, type=11, cpp_type=10, label=3,
+      name='tags', full_name='BuildRequest.tags', index=13,
+      number=14, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -130,7 +144,7 @@ _BUILDREQUEST = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=24,
-  serialized_end=263,
+  serialized_end=300,
 )
 
 
@@ -161,8 +175,8 @@ _BUILDIGNORES = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=265,
-  serialized_end=294,
+  serialized_start=302,
+  serialized_end=331,
 )
 
 
@@ -200,8 +214,8 @@ _BUILDTAGS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=296,
-  serialized_end=336,
+  serialized_start=333,
+  serialized_end=373,
 )
 
 
@@ -214,22 +228,15 @@ _BUILDRESPONSE = _descriptor.Descriptor(
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='id', full_name='BuildResponse.id', index=0,
-      number=1, type=5, cpp_type=1, label=1,
-      has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='image', full_name='BuildResponse.image', index=1,
-      number=2, type=9, cpp_type=9, label=1,
+      name='image', full_name='BuildResponse.image', index=0,
+      number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='ecr_name', full_name='BuildResponse.ecr_name', index=2,
-      number=3, type=9, cpp_type=9, label=1,
+      name='repository', full_name='BuildResponse.repository', index=1,
+      number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -246,8 +253,8 @@ _BUILDRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=338,
-  serialized_end=398,
+  serialized_start=375,
+  serialized_end=425,
 )
 
 _BUILDREQUEST.fields_by_name['ignores'].message_type = _BUILDIGNORES
@@ -295,8 +302,8 @@ _IMAGEBUILDER = _descriptor.ServiceDescriptor(
   index=0,
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_start=400,
-  serialized_end=454,
+  serialized_start=427,
+  serialized_end=481,
   methods=[
   _descriptor.MethodDescriptor(
     name='Build',

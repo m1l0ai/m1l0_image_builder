@@ -9,7 +9,7 @@ import os
 import tempfile
 import shutil
 import pkg_resources
-from builder.repo import create_dockerfile, prepare_archive, build_docker_image
+from builder.repo import create_dockerfile, prepare_archive, build_docker_image, push_docker_image
 
 
 logging.basicConfig(level=logging.INFO)
@@ -57,7 +57,9 @@ class ImageBuilderService(image_builder_pb2_grpc.ImageBuilderServicer):
                 "resource": request.resource,
                 "entry": request.entry,
                 "tags": labels,
-                "revision": request.revision
+                "revision": request.revision,
+                "service": request.service,
+                "repository": request.repository
             }
 
             tmpl_dir = pkg_resources.resource_filename("builder", "templates")
@@ -66,12 +68,16 @@ class ImageBuilderService(image_builder_pb2_grpc.ImageBuilderServicer):
             build_context = prepare_archive(dockerfile, code_copy_path)
 
             tag = "{}/{}:{}".format(config["namespace"], config["name"], config["revision"])
-            build_docker_image(build_context, tag, labels, builder_img)
+            image_name = build_docker_image(build_context, tag, labels, builder_img)
+
+            # TODO: How to retrieve service creds
+            auth_config = {"username": os.environ.get("DOCKERHUB_USER"), "password": os.environ.get("DOCKERHUB_TOKEN")}
+            repository_name = push_docker_image(tag, config["service"], auth_config, config.get("repository"))
 
             shutil.rmtree(tmp_path)
 
 
-        return BuildResponse(image="yolo", ecr_name="yolo")
+        return BuildResponse(image=image_name, repository=repository_name)
 
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))

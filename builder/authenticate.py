@@ -1,4 +1,5 @@
 import base64
+from docker.errors import APIError
 
 
 def ecr_login(client, tag):

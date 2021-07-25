@@ -11,8 +11,10 @@ message BuildRequest {
   string entry = 8;
   int32 revision = 9;
   string source = 10;
-  repeated BuildIgnores ignores = 11;
-  repeated BuildTags tags = 12;
+  string service = 11;
+  string repository = 12;
+  repeated BuildIgnores ignores = 13;
+  repeated BuildTags tags = 14;
 }
 
 message BuildIgnores {
@@ -25,9 +27,8 @@ message BuildTags {
 }
 
 message BuildResponse {
-	int32 id = 1;
-	string image = 2;
-	string ecr_name = 3;
+	string image = 1;
+	string repository = 2;
 }
 
 service ImageBuilder {

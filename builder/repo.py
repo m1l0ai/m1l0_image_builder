@@ -1,5 +1,6 @@
 # Functions for building docker images
 from .clients import docker_client, docker_api_client
+from .authenticate import authenticate_docker_client
 from docker.errors import APIError
 from docker.errors import ImageNotFound
 from jinja2 import Environment, FileSystemLoader
@@ -91,6 +92,8 @@ def upload_archive_into_container(container, path, archive):
 def get_build_image(config):
     """
     Generates the FROM builder string in Dockerfile
+
+    if base image supplied it would be like 'tensorflow/0.2.4:latest' for example...
     """
     if "baseimage" in config:
         builder_image = config["baseimage"]
@@ -213,11 +216,7 @@ def build_docker_image(tar_archive, tag, labels, encoding="utf-8"):
         'rm': True, 
         'decode': True,
         'pull': True
-    }
-
-    # Check if image exists locally
-    # repo_name = builder_img.split(':')[0]
-    # found_img = api_client.images(repo_name)
+    } 
 
     try:
         logs = api_client.build(**args)
@@ -227,8 +226,63 @@ def build_docker_image(tar_archive, tag, labels, encoding="utf-8"):
                 raise APIError(res)
             else:
                 module_logger.info(res)
-                # print(res)
+
+        return tag
     except ImageNotFound as e:
         module_logger.error("Error with building image: {}".format(e))
     except APIError as e:
         module_logger.error("Docker API returns an error: {}".format(e))
+
+
+def push_docker_image(image, service, auth_config, repository=None):
+    """
+    Pushes built image
+
+    Note for dockerhub the repository must be create first and passed in here
+
+    For ecr, we can push using a url type syntax ....
+
+    Inputs:
+    image => "cheeproject/mnist:1"
+    service => One of "docker" or "ecr" 
+    auth_config => dict of username, password
+    respository => Needed for dockerhub
+    """
+
+    # Authenticate against service first
+    if service == "dockerhub":
+        api_client = docker_api_client()
+        
+        registry = "https://index.docker.io/v1/"
+        status = authenticate_docker_client(api_client, registry, auth_config)
+        if status != "Login Succeeded":
+            raise RuntimeError("Unable to login to dockerhub service. Push failed.")
+
+        if repository:
+            tag = image.replace("/", "-").replace(":", "-")
+            dockerhub_repo_name = "{}/{}".format(auth_config["username"], repository)
+        else:
+            raise RuntimeError("Repository must be specified for dockerhub")
+
+        try:
+            module_logger.info("Tagging repo {} with {} ...".format(dockerhub_repo_name, tag))
+            api_client.tag(image, dockerhub_repo_name, tag)
+
+            module_logger.info("Pushing to remote repo: {}...".format(dockerhub_repo_name))
+            logs = api_client.push(dockerhub_repo_name, auth_config=auth_config, tag=tag, stream=True, decode=True)
+            
+            for log in logs:
+                res = process_build_log(log)
+                if 'Error' in res:
+                    raise APIError(res)
+                else:
+                    module_logger.info(res)
+
+
+            return dockerhub_repo_name
+        except ImageNotFound as e:
+            module_logger.error("Error with pushing image: {}".format(e))
+        except APIError as e:
+            module_logger.error("Docker API returns an error: {}".format(e))
+        except RuntimeError as e:
+            module_logger.error("Error with pushing image: {}".format(e))
