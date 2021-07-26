@@ -1,12 +1,10 @@
 ARG BUILDER={{ builder }}
 
-FROM ${BUILDER} as base
+FROM ${BUILDER}
 
 {{ files }}
 {%- if requirements %}
 {{ requirements }}
 {% endif %}
-
-HEALTHCHECK --interval=5s --timeout=10s --retries=5 CMD healthcheck
 
 {{ entrypoint }}

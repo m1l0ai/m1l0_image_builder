@@ -11,6 +11,7 @@ import tempfile
 import shutil
 import pkg_resources
 from builder.repo import create_dockerfile, prepare_archive, build_docker_image, push_docker_image
+from builder.vaultclient import fetch_credentials
 
 
 logging.basicConfig(level=logging.INFO)
@@ -72,16 +73,7 @@ class ImageBuilderService(image_builder_pb2_grpc.ImageBuilderServicer):
             image_name = build_docker_image(build_context, tag, labels, builder_img)
 
             # TODO: How to retrieve service creds
-            if request.service == "dockerhub":
-                auth_config = {"username": os.environ.get("DOCKERHUB_USER"), "password": os.environ.get("DOCKERHUB_TOKEN")}
-            elif request.service == "ecr":
-                auth_config = {
-                    "profile": os.environ.get("AWS_PROFILE"), 
-                    "region": os.environ.get("AWS_REGION"),
-                    "access_key": os.environ.get("AWS_ACCESS_KEY"),
-                    "secret_access_key": os.environ.get("AWS_SECRET_KEY")
-                }
-
+            auth_config = fetch_credentials(config["service"])
             repository_name = push_docker_image(tag, config["service"], auth_config, config.get("repository"))
 
             shutil.rmtree(tmp_path)
