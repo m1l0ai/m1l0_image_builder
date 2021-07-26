@@ -1,6 +1,6 @@
 # Functions for building docker images
 from .clients import docker_client, docker_api_client
-from .authenticate import authenticate_docker_client
+from .authenticate import authenticate_docker_client, authenticate_ecr
 from docker.errors import APIError
 from docker.errors import ImageNotFound
 from jinja2 import Environment, FileSystemLoader
@@ -26,67 +26,6 @@ def tempdir(suffix="", prefix="tmp"):
     tmp = tempfile.mkdtemp(suffix=suffix, prefix=prefix, dir=None)
     yield tmp
     shutil.rmtree(tmp)
-
-
-def create_data_container(name, job_id, tar_archive, network='m1l0net'):
-    """
-    Creates a data container to store the training data
-    in a volume which gets attached to the running container
-
-    config => Configuration of building container
-    tar_archive => TAR archive to upload into volume
-    job_id => ID of enqueue job; used for creating unique container name
-    """
-    client = docker_client()
-
-    # create data vol
-    data_volume = client.volumes.create(
-        name='datavol-{}-{}'.format(name, job_id),
-        driver='local',
-        labels={'m1l0.job-id': job_id}
-    )
-
-    # Create initial container to bind volume to
-    data_dir = '/root/code'
-    
-    kwargs = {
-        'name': 'datavol-attached-{}-{}'.format(name, job_id),
-        'labels': {
-            "m1l0.role": "builder",
-            'm1l0.job-id': job_id,
-            'm1l0.volumes': json.dumps([{'name': data_volume.name, 'destination': data_dir}])
-        },
-        # 'auto_remove': True,
-        # 'detach': True,
-        'volumes': {
-            data_volume.name: {'bind': data_dir, 'mode': 'rw'}
-        },
-        'network': network
-    }
-
-    datavol_attached = client.containers.create(
-        "ubuntu:18.04",
-        command=None,
-        **kwargs
-    )
-
-    res = upload_archive_into_container(datavol_attached, data_dir, tar_archive)
-    module_logger.info("Upload {} into {} -> Status {}".format(filename, data_volume.name, res))
-    
-    return datavol_attached, data_volume
-
-
-def upload_archive_into_container(container, path, archive):
-    """
-    Uploads the tar archive into the given container using
-    put_archive
-    """
-    try:
-        return container.put_archive(path, archive)
-    except APIError as e:
-        raise e
-    except Exception as e:
-        raise e
 
 
 def get_build_image(config):
@@ -249,40 +188,48 @@ def push_docker_image(image, service, auth_config, repository=None):
     respository => Needed for dockerhub
     """
 
-    # Authenticate against service first
     if service == "dockerhub":
+        if not repository:
+            raise RuntimeError("Repository must be specified for dockerhub")
+
         api_client = docker_api_client()
-        
         registry = "https://index.docker.io/v1/"
         status = authenticate_docker_client(api_client, registry, auth_config)
         if status != "Login Succeeded":
             raise RuntimeError("Unable to login to dockerhub service. Push failed.")
 
-        if repository:
-            tag = image.replace("/", "-").replace(":", "-")
-            dockerhub_repo_name = "{}/{}".format(auth_config["username"], repository)
-        else:
-            raise RuntimeError("Repository must be specified for dockerhub")
-
-        try:
-            module_logger.info("Tagging repo {} with {} ...".format(dockerhub_repo_name, tag))
-            api_client.tag(image, dockerhub_repo_name, tag)
-
-            module_logger.info("Pushing to remote repo: {}...".format(dockerhub_repo_name))
-            logs = api_client.push(dockerhub_repo_name, auth_config=auth_config, tag=tag, stream=True, decode=True)
+        tag = image.split(":")[-1]
+        repo_name = "{}/{}".format(auth_config["username"], repository)
             
-            for log in logs:
-                res = process_build_log(log)
-                if 'Error' in res:
-                    raise APIError(res)
-                else:
-                    module_logger.info(res)
+    elif service == "ecr":
+        api_client = docker_api_client()
+        ecr_url, auth_config = authenticate_ecr(auth_config, image)
+        status = authenticate_docker_client(api_client, ecr_url, auth_config)
+        if status != "Login Succeeded":
+            raise RuntimeError("Unable to login to docker using ECR credentials. Push failed.")
+        repo_name, tag = image.split(":")
+        repo_name = '{}/{}'.format(ecr_url.replace('https://', ''), repo_name)
 
+    try:
+        module_logger.info("Tagging repo {} with {} ...".format(repo_name, tag))
+        api_client.tag(image, repo_name, tag)
 
-            return dockerhub_repo_name
-        except ImageNotFound as e:
-            module_logger.error("Error with pushing image: {}".format(e))
-        except APIError as e:
-            module_logger.error("Docker API returns an error: {}".format(e))
-        except RuntimeError as e:
-            module_logger.error("Error with pushing image: {}".format(e))
+        module_logger.info("Pushing to remote repo: {}:{} ...".format(repo_name, tag))
+
+        logs = api_client.push(repo_name, auth_config=auth_config, tag=tag, stream=True, decode=True)
+        
+        for log in logs:
+            res = process_build_log(log)
+            if 'Error' in res:
+                raise APIError(res)
+            else:
+                module_logger.info(res)
+
+        full_repo_name = "{}:{}".format(repo_name, tag)
+        return full_repo_name
+    except ImageNotFound as e:
+        module_logger.error("Error with pushing image: {}".format(e))
+    except APIError as e:
+        module_logger.error("Docker API returns an error: {}".format(e))
+    except RuntimeError as e:
+        module_logger.error("Error with pushing image: {}".format(e))

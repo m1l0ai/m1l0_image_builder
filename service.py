@@ -1,6 +1,7 @@
 import image_builder_pb2_grpc as image_builder_pb2_grpc
 from image_builder_pb2 import BuildRequest, BuildResponse, BuildTags
 from concurrent import futures
+import sys
 import grpc
 from signal import signal, SIGTERM, SIGINT
 import logging
@@ -71,7 +72,16 @@ class ImageBuilderService(image_builder_pb2_grpc.ImageBuilderServicer):
             image_name = build_docker_image(build_context, tag, labels, builder_img)
 
             # TODO: How to retrieve service creds
-            auth_config = {"username": os.environ.get("DOCKERHUB_USER"), "password": os.environ.get("DOCKERHUB_TOKEN")}
+            if request.service == "dockerhub":
+                auth_config = {"username": os.environ.get("DOCKERHUB_USER"), "password": os.environ.get("DOCKERHUB_TOKEN")}
+            elif request.service == "ecr":
+                auth_config = {
+                    "profile": os.environ.get("AWS_PROFILE"), 
+                    "region": os.environ.get("AWS_REGION"),
+                    "access_key": os.environ.get("AWS_ACCESS_KEY"),
+                    "secret_access_key": os.environ.get("AWS_SECRET_KEY")
+                }
+
             repository_name = push_docker_image(tag, config["service"], auth_config, config.get("repository"))
 
             shutil.rmtree(tmp_path)
@@ -92,6 +102,7 @@ def serve():
         all_rpcs_done_event = server.stop(30)
         all_rpcs_done_event.wait(30)
         module_logger.info("Shutdown gracefully...")
+        sys.exit(0)
 
     signal(SIGTERM, handle_sigterm)
     signal(SIGINT, handle_sigterm)
