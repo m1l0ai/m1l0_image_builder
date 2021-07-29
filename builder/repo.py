@@ -42,7 +42,7 @@ def get_build_image(config):
     return builder_image
 
 
-def create_dockerfile(config, tmpl_dir, code_dir, dockerfile_path, has_requirements=False, save_file=False, local=False, ecr_prefix=None):
+def create_dockerfile(config, tmpl_dir, code_dir, dockerfile_path=None, has_requirements=False, save_file=False, local=False, ecr_prefix=None):
     """
     Creates a dockerfile from train job obj
 
@@ -53,6 +53,8 @@ def create_dockerfile(config, tmpl_dir, code_dir, dockerfile_path, has_requireme
     proj_name = config['name']
     project_dir = '/opt/model'
     working_dir = '/opt/model/jobs'
+
+    tags = config["tags"]
 
     files_copy_cmd = "COPY {} {}".format(code_dir, project_dir)
 
@@ -77,15 +79,13 @@ def create_dockerfile(config, tmpl_dir, code_dir, dockerfile_path, has_requireme
     )
 
     template = env.get_template("image.jinja")
-    
-    dockerfile = os.path.join(dockerfile_path, "Dockerfile")
-
     builder_image = get_build_image(config)
 
-    dockerfile_str = template.render(builder=builder_image, files=files_copy_cmd, requirements=reqs_cmd, entrypoint=entrypoint)
+    dockerfile_str = template.render(builder=builder_image, files=files_copy_cmd, requirements=reqs_cmd, entrypoint=entrypoint, tags=tags)
 
     if save_file:
-        with open(dockerfile, "w+") as f:
+        dockerfile = os.path.join(dockerfile_path, "Dockerfile")
+        with open(dockerfile_path, "w+") as f:
             f.write(dockerfile_str)
 
         return dockerfile, builder_image
@@ -171,7 +171,6 @@ def build_docker_image(tar_archive, tag, labels, encoding="utf-8"):
         module_logger.error("Error with building image: {}".format(e))
     except APIError as e:
         module_logger.error("Docker API returns an error: {}".format(e))
-
 
 def push_docker_image(image, service, auth_config, repository=None):
     """

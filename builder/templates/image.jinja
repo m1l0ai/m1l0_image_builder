@@ -2,6 +2,12 @@ ARG BUILDER={{ builder }}
 
 FROM ${BUILDER}
 
+{%- if tags %}
+{% for k, v in tags.items() -%}
+LABEL {{ k }}={{ v }}
+{% endfor %}
+{% endif %}
+
 {{ files }}
 {%- if requirements %}
 {{ requirements }}

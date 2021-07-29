@@ -64,6 +64,7 @@ def fetch_credentials(service):
     """
     rolename = os.environ.get("VAULT_APPROLE")
     secretname = os.environ.get("VAULT_SECRET")
+
     role_id = get_role_id(rolename)
     secret_id = create_role_secret(rolename)
     token = approle_login(role_id, secret_id)
@@ -82,6 +83,10 @@ def fetch_credentials(service):
             "access_key": creds.get("aws_access_key"),
             "secret_access_key": creds.get("aws_secret_key")
         }
+    elif service == "github":
+        auth_config = {
+            "token": creds.get("github_token")
+        }
 
     return auth_config
 
@@ -89,12 +94,5 @@ def fetch_credentials(service):
 
 if __name__ == "__main__":
     unseal_vault()
-    role_id = get_role_id("my-role")
-    print(role_id)
-    secret_id = create_role_secret("my-role")
-    print(secret_id)
-
-    token = approle_login(role_id, secret_id)
-    print("TOKEN > ", token)
-    creds = get_secret("builder", token)
-    print(creds)
+    res = fetch_credentials("github")
+    print(res)

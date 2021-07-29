@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\x13image_builder.proto\"\x94\x02\n\x0c\x42uildRequest\x12\n\n\x02id\x18\x01 \x01(\x05\x12\x11\n\tnamespace\x18\x02 \x01(\t\x12\x0c\n\x04name\x18\x03 \x01(\t\x12\x11\n\tframework\x18\x04 \x01(\t\x12\x0f\n\x07version\x18\x05 \x01(\t\x12\x11\n\tpyversion\x18\x06 \x01(\t\x12\x10\n\x08resource\x18\x07 \x01(\t\x12\r\n\x05\x65ntry\x18\x08 \x01(\t\x12\x10\n\x08revision\x18\t \x01(\x05\x12\x0e\n\x06source\x18\n \x01(\t\x12\x0f\n\x07service\x18\x0b \x01(\t\x12\x12\n\nrepository\x18\x0c \x01(\t\x12\x1e\n\x07ignores\x18\r \x03(\x0b\x32\r.BuildIgnores\x12\x18\n\x04tags\x18\x0e \x03(\x0b\x32\n.BuildTags\"\x1d\n\x0c\x42uildIgnores\x12\r\n\x05value\x18\x01 \x01(\t\"(\n\tBuildTags\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t\"2\n\rBuildResponse\x12\r\n\x05image\x18\x01 \x01(\t\x12\x12\n\nrepository\x18\x02 \x01(\t26\n\x0cImageBuilder\x12&\n\x05\x42uild\x12\r.BuildRequest\x1a\x0e.BuildResponseb\x06proto3'
+  serialized_pb=b'\n\x13image_builder.proto\"\x94\x02\n\x0c\x42uildRequest\x12\n\n\x02id\x18\x01 \x01(\t\x12\x11\n\tnamespace\x18\x02 \x01(\t\x12\x0c\n\x04name\x18\x03 \x01(\t\x12\x11\n\tframework\x18\x04 \x01(\t\x12\x0f\n\x07version\x18\x05 \x01(\t\x12\x11\n\tpyversion\x18\x06 \x01(\t\x12\x10\n\x08resource\x18\x07 \x01(\t\x12\r\n\x05\x65ntry\x18\x08 \x01(\t\x12\x10\n\x08revision\x18\t \x01(\x05\x12\x0e\n\x06source\x18\n \x01(\t\x12\x0f\n\x07service\x18\x0b \x01(\t\x12\x12\n\nrepository\x18\x0c \x01(\t\x12\x1e\n\x07ignores\x18\r \x03(\x0b\x32\r.BuildIgnores\x12\x18\n\x04tags\x18\x0e \x03(\x0b\x32\n.BuildTags\"\x1d\n\x0c\x42uildIgnores\x12\r\n\x05value\x18\x01 \x01(\t\"(\n\tBuildTags\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t\"2\n\rBuildResponse\x12\r\n\x05image\x18\x01 \x01(\t\x12\x12\n\nrepository\x18\x02 \x01(\t26\n\x0cImageBuilder\x12&\n\x05\x42uild\x12\r.BuildRequest\x1a\x0e.BuildResponseb\x06proto3'
 )
 
 
@@ -35,8 +35,8 @@ _BUILDREQUEST = _descriptor.Descriptor(
   fields=[
     _descriptor.FieldDescriptor(
       name='id', full_name='BuildRequest.id', index=0,
-      number=1, type=5, cpp_type=1, label=1,
-      has_default_value=False, default_value=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
