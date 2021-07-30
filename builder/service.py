@@ -1,12 +1,11 @@
 import image_builder_pb2_grpc as image_builder_pb2_grpc
 from image_builder_pb2 import BuildRequest, BuildResponse, BuildTags
-from builder.core import GetSourceFiles, ImageBuilder
+from core import GetSourceFiles, ImageBuilder
 from concurrent import futures
 import sys
 import grpc
 from signal import signal, SIGTERM, SIGINT
 import logging
-
 
 
 logging.basicConfig(level=logging.INFO)

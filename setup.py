@@ -36,8 +36,8 @@ setup(
     setup_requires=['pytest-runner', 'flake8'],
     tests_require=['pytest'],
     entry_points={
-        'console_scripts': [
-            'm1l0_builder=builder.cli:main'
-        ]
+        # 'console_scripts': [
+        #     'm1l0_builder=builder.cli:main'
+        # ]
     },
 )

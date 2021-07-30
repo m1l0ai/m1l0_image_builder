@@ -1,6 +1,7 @@
 # Functions for building docker images
-from .clients import docker_client, docker_api_client
-from .authenticate import authenticate_docker_client, authenticate_ecr
+from clients.docker import docker_client, docker_api_client
+from authentication.authenticate import authenticate_docker_client, authenticate_ecr
+from authentication.vaultclient import fetch_credentials, unseal_vault
 from docker.errors import APIError
 from docker.errors import ImageNotFound
 from jinja2 import Environment, FileSystemLoader
@@ -70,7 +71,8 @@ def create_dockerfile(config, tmpl_dir, code_dir, dockerfile_path=None, has_requ
         req_path = os.path.join(project_dir, "requirements.txt")
         reqs_cmd = textwrap.dedent(
             """
-        RUN pip install --no-cache-dir --requirement {}
+        RUN python3 -m pip install --upgrade pip && \
+            python3 -m pip install --no-cache-dir --requirement {}
         """
         ).format(req_path)
 
@@ -88,9 +90,9 @@ def create_dockerfile(config, tmpl_dir, code_dir, dockerfile_path=None, has_requ
         with open(dockerfile_path, "w+") as f:
             f.write(dockerfile_str)
 
-        return dockerfile, builder_image
+        return dockerfile
     else:
-        return dockerfile_str, builder_image
+        return dockerfile_str
 
 def process_build_log(log):
     """Process docker build log line"""
@@ -116,7 +118,6 @@ def process_build_log(log):
 
     return res
 
-
 def prepare_archive(dockerfile, tmp_code_path, encoding="utf-8"):
     tarstream = BytesIO()
     archive = tarfile.TarFile(fileobj=tarstream, mode="w")
@@ -134,15 +135,60 @@ def prepare_archive(dockerfile, tmp_code_path, encoding="utf-8"):
     tarstream.seek(0)
     return archive
 
+def create_archive(dockerfile, tmp_code_path):
+    """
+    Creates and saves the archive at tmp code path
+    """
+    archive = os.path.join(tempfile.gettempdir(), "code", "myarchive.tar.gz")
+    with tarfile.open(archive, mode="w:gz", debug=2) as t:
+        dockerfile_str = dockerfile.encode("utf-8")
+        dockerfile_tar_info = tarfile.TarInfo("Dockerfile")
+        dockerfile_tar_info.size = len(dockerfile_str)
+        t.addfile(dockerfile_tar_info, BytesIO(dockerfile_str))
+
+        code_dir = os.path.split(tmp_code_path)[-1]
+
+        for x in os.listdir(tmp_code_path):
+            p = os.path.join(tmp_code_path, x)
+            t.add(p, arcname=os.path.join(code_dir, os.path.basename(p)))
+
+    return archive
+
+def service_login(service, tag=None):
+    api_client = docker_api_client()
+    
+    unseal_vault()
+
+    if service == "dockerhub":
+        auth_config = fetch_credentials("dockerhub")
+        registry = "https://index.docker.io/v1/"
+        if len(auth_config) > 0:
+            status = authenticate_docker_client(api_client, registry, auth_config)
+            return status, auth_config
+    elif service == "ecr":
+        auth_config = fetch_credentials("ecr")
+        if len(auth_config) > 0:
+            ecr_url, auth_config = authenticate_ecr(auth_config, tag)
+            status = authenticate_docker_client(api_client, ecr_url, auth_config)
+            return status, ecr_url, auth_config
+
+
 def build_docker_image(tar_archive, tag, labels, encoding="utf-8"):
     """
     Builds docker image with given build context in tar archive
+
+    Note: we may need to authenticate with both ecr and dockerhub as private
+    images may be used inside FROM of dockerfile if user specifies baseimage
     """
     module_logger.info("Building project with tag {}".format(tag))
+
+    service_login("dockerhub")
+    service_login("ecr", tag)
 
     # Using the low level api so we can stream the build...
     api_client = docker_api_client()
 
+    
     # Note: Setting pull: True here will cause the docker daemon to only pull images from dockerhub/remote repo so need to set it to false for using local images...
     # https://stackoverflow.com/questions/20481225/how-can-i-use-a-local-image-as-the-base-image-with-a-dockerfile
     args = {
@@ -172,7 +218,7 @@ def build_docker_image(tar_archive, tag, labels, encoding="utf-8"):
     except APIError as e:
         module_logger.error("Docker API returns an error: {}".format(e))
 
-def push_docker_image(image, service, auth_config, repository=None):
+def push_docker_image(image, service, repository=None):
     """
     Pushes built image
 
@@ -180,43 +226,44 @@ def push_docker_image(image, service, auth_config, repository=None):
 
     For ecr, we can push using a url type syntax ....
 
+    We also need to reauth for each login type even though the config.json file is mounted here...
+
     Inputs:
     image => "cheeproject/mnist:1"
     service => One of "docker" or "ecr" 
     auth_config => dict of username, password
     respository => Needed for dockerhub
     """
-
-    if service == "dockerhub":
-        if not repository:
-            raise RuntimeError("Repository must be specified for dockerhub")
-
-        api_client = docker_api_client()
-        registry = "https://index.docker.io/v1/"
-        status = authenticate_docker_client(api_client, registry, auth_config)
-        if status != "Login Succeeded":
-            raise RuntimeError("Unable to login to dockerhub service. Push failed.")
-
-        tag = image.split(":")[-1]
-        repo_name = "{}/{}".format(auth_config["username"], repository)
-            
-    elif service == "ecr":
-        api_client = docker_api_client()
-        ecr_url, auth_config = authenticate_ecr(auth_config, image)
-        status = authenticate_docker_client(api_client, ecr_url, auth_config)
-        if status != "Login Succeeded":
-            raise RuntimeError("Unable to login to docker using ECR credentials. Push failed.")
-        repo_name, tag = image.split(":")
-        repo_name = '{}/{}'.format(ecr_url.replace('https://', ''), repo_name)
+    api_client = docker_api_client()
 
     try:
-        module_logger.info("Tagging repo {} with {} ...".format(repo_name, tag))
-        api_client.tag(image, repo_name, tag)
+        if service == "dockerhub":
+            if not repository:
+                raise RuntimeError("Repository must be specified for dockerhub")
+
+            status, auth_config = service_login("dockerhub")
+            if status != "Login Succeeded":
+                raise RuntimeError("Unable to login to Dockerhub service. Push failed.")
+
+            tag = image.split(":")[-1]
+            repo_name = repository
+            api_client.tag(image, repository, tag)
+        elif service == "ecr":
+            # NOTE: ECR requires reauth hence logging in again...
+            status, ecr_url, auth_config = service_login("ecr")
+            if status != "Login Succeeded":
+                raise RuntimeError("Unable to login to ECR service. Push failed.")
+
+            repo_name, tag = image.split(":")
+            repo_name = '{}/{}'.format(ecr_url.replace('https://', ''), repo_name)
+
+            module_logger.info("Tagging repo {} with {} ...".format(repo_name, tag))
+            api_client.tag(image, repo_name, tag)
 
         module_logger.info("Pushing to remote repo: {}:{} ...".format(repo_name, tag))
 
         logs = api_client.push(repo_name, auth_config=auth_config, tag=tag, stream=True, decode=True)
-        
+
         for log in logs:
             res = process_build_log(log)
             if 'Error' in res:

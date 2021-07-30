@@ -2,6 +2,28 @@ import requests
 import os
 import json
 
+
+def vault_still_sealed():
+    """
+    Checks the seal status of vault
+
+    Returns True if vault still sealed
+    else returns False
+    """
+    vault_host = os.environ.get("VAULT_ADDR")
+    resp = requests.post("{}/v1/sys/seal-status".format(vault_host))
+    if resp.status_code == 200:
+        status = resp.json()["sealed"]
+        progress = resp.json()["progress"]
+
+        if status == True and progress > 1:
+            print("Vault still sealed")
+            return True
+        elif status == False and progress == 0:
+            print("Vault unsealed")
+            return False
+
+
 def unseal_vault():
     """
     Unseals the vault
@@ -9,18 +31,21 @@ def unseal_vault():
     The unseal token will be passed into the service container as ENV vars
     """
     unseal_token = os.environ.get("VAULT_UNSEAL")
-    resp = requests.post("http://127.0.0.1:8200/v1/sys/unseal", data=json.dumps({"key": unseal_token}))
+    vault_host = os.environ.get("VAULT_ADDR")
+    resp = requests.post("{}/v1/sys/unseal".format(vault_host), data=json.dumps({"key": unseal_token}))
 
     if resp.status_code == 200 and resp.json()["sealed"] == False:
         print("Vault unsealed")
+        return True
 
 def get_role_id(rolename):
     """
     Gets the role id of specific rolename
     """
     vault_token = os.environ.get("VAULT_TOKEN")
+    vault_host = os.environ.get("VAULT_ADDR")
     headers = {"X-Vault-Token": vault_token}
-    resp = requests.get("http://127.0.0.1:8200/v1/auth/approle/role/{}/role-id".format(rolename), headers=headers)
+    resp = requests.get("{}/v1/auth/approle/role/{}/role-id".format(vault_host, rolename), headers=headers)
     if resp.status_code == 200:
         role_id = resp.json()["data"]["role_id"]
         return role_id
@@ -30,8 +55,9 @@ def create_role_secret(rolename):
     Creates new secret under rolename
     """
     vault_token = os.environ.get("VAULT_TOKEN")
+    vault_host = os.environ.get("VAULT_ADDR")
     headers = {"X-Vault-Token": vault_token}
-    resp = requests.post("http://127.0.0.1:8200/v1/auth/approle/role/{}/secret-id".format(rolename), headers=headers)
+    resp = requests.post("{}/v1/auth/approle/role/{}/secret-id".format(vault_host, rolename), headers=headers)
     if resp.status_code == 200:
         secret_id = resp.json()["data"]["secret_id"]
         return secret_id
@@ -41,7 +67,8 @@ def approle_login(role_id, secret_id):
     Logins to given approle using role_id and secret_id
     """
     data = {"role_id": role_id, "secret_id": secret_id}
-    resp = requests.post("http://127.0.0.1:8200/v1/auth/approle/login", data=json.dumps(data))
+    vault_host = os.environ.get("VAULT_ADDR")
+    resp = requests.post("{}/v1/auth/approle/login".format(vault_host), data=json.dumps(data))
 
     if resp.status_code == 200:
         client_token = resp.json()["auth"]["client_token"]
@@ -52,7 +79,8 @@ def get_secret(secret_name, token):
     Gets the secret denoted by name
     """
     headers = {"X-Vault-Token": token}
-    resp = requests.get("http://127.0.0.1:8200/v1/secret/data/{}".format(secret_name), headers=headers)
+    vault_host = os.environ.get("VAULT_ADDR")
+    resp = requests.get("{}/v1/secret/data/{}".format(vault_host, secret_name), headers=headers)
 
     if resp.status_code == 200:
         creds = resp.json()["data"]["data"]

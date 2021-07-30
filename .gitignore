@@ -140,6 +140,8 @@ cython_debug/
 
 # Custom ignores
 test*.py
-.env
+.env*
 ISSUES
 NOTES.md
+KANIKO.md
+*config.json

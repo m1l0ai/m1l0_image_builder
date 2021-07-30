@@ -21,12 +21,12 @@ def authenticate_ecr(auth_config, tag):
     auth_config => dict of aws creds
     tag => name of repository
     """
-    profile = auth_config.get("profile")
     region = auth_config.get("region")
     access_key = auth_config.get("access_key")
     secret_access_key = auth_config.get("secret_access_key")
 
-    session = boto3.Session(aws_access_key_id=access_key, aws_secret_access_key=secret_access_key, profile_name=profile, region_name=region)
+    session = boto3.session.Session(aws_access_key_id=access_key, aws_secret_access_key=secret_access_key, region_name=region)
+
     ecr_client = session.client("ecr", region_name=region)
     ecr_prefix = get_ecr_image_prefix(session, region)
 

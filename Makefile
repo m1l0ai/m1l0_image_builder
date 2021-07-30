@@ -1,14 +1,17 @@
-.PHONY: build-protobufs remove-volumes dist
+.PHONY: build-protobufs remove-volumes dist build-image
 
 build-protobufs:
 	python -m grpc_tools.protoc -I protobufs --python_out=gprotobufs --grpc_python_out=gprotobufs protobufs/image_builder.proto
 
+build-image:
+	docker build --rm -t m1l0/builder:latest -f Dockerfile .
+
 run-service:
 	PYTHONPATH="${PWD}/gprotobufs" \
-	python service.py
+	python builder/service.py
 
 run-client:
-	 PYTHONPATH="${PWD}/gprotobufs" \
+	 PYTHONPATH="${PWD}/gprotobufs:${PWD}/builder" \
 	 python testpackage.py 
 
 remove-volumes:

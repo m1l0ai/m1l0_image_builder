@@ -1,0 +1,8 @@
+docker~=5.0.0
+boto3~=1.14.2
+Jinja2~=2.11
+grpcio-tools~=1.30
+grpc-interceptor~=0.12.0
+requests~=2.25.1
+PyGithub~=1.55
+pytest~=5.4.1

@@ -12,3 +12,11 @@ To run test client:
  PYTHONPATH="${PWD}/gprotobufs" python testpackage.py 
  
 ```
+
+### TODO:
+
+* Healthcheck for grpc service
+
+* Use grpc interceptors to return appropriate errors...
+
+  Useful to use interceptors for request params validation
