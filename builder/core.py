@@ -1,6 +1,6 @@
 # Core classes for building images
 from authentication.vaultclient import fetch_credentials, unseal_vault
-from repo import create_dockerfile, prepare_archive, build_docker_image, create_archive, push_docker_image
+from repo import create_dockerfile, prepare_archive, build_docker_image, push_docker_image
 from github import Github
 import tempfile
 import os
@@ -8,7 +8,7 @@ import shutil
 from urllib.parse import urlparse
 import pkg_resources
 from pathlib import Path
-
+import traceback
 
 
 class GetSourceFiles:
@@ -34,8 +34,20 @@ class GetSourceFiles:
         if os.path.exists(code_copy_path):
             shutil.rmtree(code_copy_path)
 
-        if parsed_url.scheme == "file":
-            shutil.copytree(parsed_url.path, code_copy_path, ignore=shutil.ignore_patterns(*ignores))
+        if parsed_url.scheme == "dir":
+            # Assume that the dir refers to an existing path inside the mounted volume of this container
+
+            try:
+                # Copy from parsed_url.path to temp dir to remove ignores
+                shutil.move(parsed_url.path, code_copy_path + "_tmp")
+                # Copy from temp back to code_copy_path
+                shutil.copytree(code_copy_path + "_tmp", code_copy_path, ignore=shutil.ignore_patterns(*ignores))
+
+                shutil.rmtree(code_copy_path + "_tmp")
+            except Exception as e:
+                error_msg = "Dir copy error: \n{}\n{}".format(traceback.format_exc(), str(e))
+                print(error_msg)
+
         elif ".git" in parsed_url.path:
             # Get token
             unseal_vault()
@@ -43,9 +55,10 @@ class GetSourceFiles:
             # Login to github first using token
             github_client = Github(auth_config["token"])
             repo = github_client.get_repo(parsed_url.path.lstrip("/").split(".git")[0])
-            cmd = "git clone {} {}".format(repo.clone_url, code_copy_path)
+            cmd = "git clone {} {}".format(repo.clone_url, code_copy_path + "_tmp")
             os.system(cmd)
-            # TODO: remove cloned files in ignores...
+            
+            shutil.copytree(code_copy_path + "_tmp", code_copy_path, ignore=shutil.ignore_patterns(*ignores))
 
         return code_copy_path
 

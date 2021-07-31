@@ -135,17 +135,12 @@ def prepare_archive(dockerfile, tmp_code_path, encoding="utf-8"):
     tarstream.seek(0)
     return archive
 
-def create_archive(dockerfile, tmp_code_path):
+def create_archive(target_dir, tmp_code_path):
     """
     Creates and saves the archive at tmp code path
     """
-    archive = os.path.join(tempfile.gettempdir(), "code", "myarchive.tar.gz")
+    archive = os.path.join(target_dir, "myarchive.tar.gz")
     with tarfile.open(archive, mode="w:gz", debug=2) as t:
-        dockerfile_str = dockerfile.encode("utf-8")
-        dockerfile_tar_info = tarfile.TarInfo("Dockerfile")
-        dockerfile_tar_info.size = len(dockerfile_str)
-        t.addfile(dockerfile_tar_info, BytesIO(dockerfile_str))
-
         code_dir = os.path.split(tmp_code_path)[-1]
 
         for x in os.listdir(tmp_code_path):
