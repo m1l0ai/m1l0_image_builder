@@ -35,14 +35,8 @@ message BuildLog {
   string body = 1;
 }
 
-message BuildQuery {
-  string id = 1;
-}
-
 service ImageBuilder {
   // Simple RPC service for building images
 	// rpc Build(BuildRequest) returns (BuildResponse);
   rpc Build(BuildRequest) returns (stream BuildLog){}
-
-  rpc Query(BuildQuery) returns (BuildResponse){}
 }

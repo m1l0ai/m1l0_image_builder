@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\x13image_builder.proto\"\x94\x02\n\x0c\x42uildRequest\x12\n\n\x02id\x18\x01 \x01(\t\x12\x11\n\tnamespace\x18\x02 \x01(\t\x12\x0c\n\x04name\x18\x03 \x01(\t\x12\x11\n\tframework\x18\x04 \x01(\t\x12\x0f\n\x07version\x18\x05 \x01(\t\x12\x11\n\tpyversion\x18\x06 \x01(\t\x12\x10\n\x08resource\x18\x07 \x01(\t\x12\r\n\x05\x65ntry\x18\x08 \x01(\t\x12\x10\n\x08revision\x18\t \x01(\x05\x12\x0e\n\x06source\x18\n \x01(\t\x12\x0f\n\x07service\x18\x0b \x01(\t\x12\x12\n\nrepository\x18\x0c \x01(\t\x12\x1e\n\x07ignores\x18\r \x03(\x0b\x32\r.BuildIgnores\x12\x18\n\x04tags\x18\x0e \x03(\x0b\x32\n.BuildTags\"\x1d\n\x0c\x42uildIgnores\x12\r\n\x05value\x18\x01 \x01(\t\"(\n\tBuildTags\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t\"2\n\rBuildResponse\x12\r\n\x05image\x18\x01 \x01(\t\x12\x12\n\nrepository\x18\x02 \x01(\t\"\x18\n\x08\x42uildLog\x12\x0c\n\x04\x62ody\x18\x01 \x01(\t\"\x18\n\nBuildQuery\x12\n\n\x02id\x18\x01 \x01(\t2]\n\x0cImageBuilder\x12%\n\x05\x42uild\x12\r.BuildRequest\x1a\t.BuildLog\"\x00\x30\x01\x12&\n\x05Query\x12\x0b.BuildQuery\x1a\x0e.BuildResponse\"\x00\x62\x06proto3'
+  serialized_pb=b'\n\x13image_builder.proto\"\x94\x02\n\x0c\x42uildRequest\x12\n\n\x02id\x18\x01 \x01(\t\x12\x11\n\tnamespace\x18\x02 \x01(\t\x12\x0c\n\x04name\x18\x03 \x01(\t\x12\x11\n\tframework\x18\x04 \x01(\t\x12\x0f\n\x07version\x18\x05 \x01(\t\x12\x11\n\tpyversion\x18\x06 \x01(\t\x12\x10\n\x08resource\x18\x07 \x01(\t\x12\r\n\x05\x65ntry\x18\x08 \x01(\t\x12\x10\n\x08revision\x18\t \x01(\x05\x12\x0e\n\x06source\x18\n \x01(\t\x12\x0f\n\x07service\x18\x0b \x01(\t\x12\x12\n\nrepository\x18\x0c \x01(\t\x12\x1e\n\x07ignores\x18\r \x03(\x0b\x32\r.BuildIgnores\x12\x18\n\x04tags\x18\x0e \x03(\x0b\x32\n.BuildTags\"\x1d\n\x0c\x42uildIgnores\x12\r\n\x05value\x18\x01 \x01(\t\"(\n\tBuildTags\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t\"2\n\rBuildResponse\x12\r\n\x05image\x18\x01 \x01(\t\x12\x12\n\nrepository\x18\x02 \x01(\t\"\x18\n\x08\x42uildLog\x12\x0c\n\x04\x62ody\x18\x01 \x01(\t25\n\x0cImageBuilder\x12%\n\x05\x42uild\x12\r.BuildRequest\x1a\t.BuildLog\"\x00\x30\x01\x62\x06proto3'
 )
 
 
@@ -289,38 +289,6 @@ _BUILDLOG = _descriptor.Descriptor(
   serialized_end=451,
 )
 
-
-_BUILDQUERY = _descriptor.Descriptor(
-  name='BuildQuery',
-  full_name='BuildQuery',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  create_key=_descriptor._internal_create_key,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='id', full_name='BuildQuery.id', index=0,
-      number=1, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  serialized_options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=453,
-  serialized_end=477,
-)
-
 _BUILDREQUEST.fields_by_name['ignores'].message_type = _BUILDIGNORES
 _BUILDREQUEST.fields_by_name['tags'].message_type = _BUILDTAGS
 DESCRIPTOR.message_types_by_name['BuildRequest'] = _BUILDREQUEST
@@ -328,7 +296,6 @@ DESCRIPTOR.message_types_by_name['BuildIgnores'] = _BUILDIGNORES
 DESCRIPTOR.message_types_by_name['BuildTags'] = _BUILDTAGS
 DESCRIPTOR.message_types_by_name['BuildResponse'] = _BUILDRESPONSE
 DESCRIPTOR.message_types_by_name['BuildLog'] = _BUILDLOG
-DESCRIPTOR.message_types_by_name['BuildQuery'] = _BUILDQUERY
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
 BuildRequest = _reflection.GeneratedProtocolMessageType('BuildRequest', (_message.Message,), {
@@ -366,13 +333,6 @@ BuildLog = _reflection.GeneratedProtocolMessageType('BuildLog', (_message.Messag
   })
 _sym_db.RegisterMessage(BuildLog)
 
-BuildQuery = _reflection.GeneratedProtocolMessageType('BuildQuery', (_message.Message,), {
-  'DESCRIPTOR' : _BUILDQUERY,
-  '__module__' : 'image_builder_pb2'
-  # @@protoc_insertion_point(class_scope:BuildQuery)
-  })
-_sym_db.RegisterMessage(BuildQuery)
-
 
 
 _IMAGEBUILDER = _descriptor.ServiceDescriptor(
@@ -382,8 +342,8 @@ _IMAGEBUILDER = _descriptor.ServiceDescriptor(
   index=0,
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_start=479,
-  serialized_end=572,
+  serialized_start=453,
+  serialized_end=506,
   methods=[
   _descriptor.MethodDescriptor(
     name='Build',
@@ -392,16 +352,6 @@ _IMAGEBUILDER = _descriptor.ServiceDescriptor(
     containing_service=None,
     input_type=_BUILDREQUEST,
     output_type=_BUILDLOG,
-    serialized_options=None,
-    create_key=_descriptor._internal_create_key,
-  ),
-  _descriptor.MethodDescriptor(
-    name='Query',
-    full_name='ImageBuilder.Query',
-    index=1,
-    containing_service=None,
-    input_type=_BUILDQUERY,
-    output_type=_BUILDRESPONSE,
     serialized_options=None,
     create_key=_descriptor._internal_create_key,
   ),

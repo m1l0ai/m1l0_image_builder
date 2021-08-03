@@ -19,11 +19,6 @@ class ImageBuilderStub(object):
                 request_serializer=image__builder__pb2.BuildRequest.SerializeToString,
                 response_deserializer=image__builder__pb2.BuildLog.FromString,
                 )
-        self.Query = channel.unary_unary(
-                '/ImageBuilder/Query',
-                request_serializer=image__builder__pb2.BuildQuery.SerializeToString,
-                response_deserializer=image__builder__pb2.BuildResponse.FromString,
-                )
 
 
 class ImageBuilderServicer(object):
@@ -37,12 +32,6 @@ class ImageBuilderServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def Query(self, request, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
 
 def add_ImageBuilderServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -50,11 +39,6 @@ def add_ImageBuilderServicer_to_server(servicer, server):
                     servicer.Build,
                     request_deserializer=image__builder__pb2.BuildRequest.FromString,
                     response_serializer=image__builder__pb2.BuildLog.SerializeToString,
-            ),
-            'Query': grpc.unary_unary_rpc_method_handler(
-                    servicer.Query,
-                    request_deserializer=image__builder__pb2.BuildQuery.FromString,
-                    response_serializer=image__builder__pb2.BuildResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -80,22 +64,5 @@ class ImageBuilder(object):
         return grpc.experimental.unary_stream(request, target, '/ImageBuilder/Build',
             image__builder__pb2.BuildRequest.SerializeToString,
             image__builder__pb2.BuildLog.FromString,
-            options, channel_credentials,
-            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
-
-    @staticmethod
-    def Query(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/ImageBuilder/Query',
-            image__builder__pb2.BuildQuery.SerializeToString,
-            image__builder__pb2.BuildResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

@@ -1,7 +1,7 @@
 # Functions for building docker images
 from clients.docker import docker_client, docker_api_client
 from authentication.authenticate import authenticate_docker_client, authenticate_ecr
-from authentication.vaultclient import fetch_credentials, unseal_vault
+from authentication.vaultclient import fetch_credentials, unseal_vault, vault_still_sealed, check_mounts
 from docker.errors import APIError
 from docker.errors import ImageNotFound
 from jinja2 import Environment, FileSystemLoader
@@ -16,6 +16,7 @@ import json
 import textwrap
 import tarfile
 from io import BytesIO
+import time
 
 
 module_logger = logging.getLogger('builder.repo')
@@ -27,7 +28,6 @@ def tempdir(suffix="", prefix="tmp"):
     tmp = tempfile.mkdtemp(suffix=suffix, prefix=prefix, dir=None)
     yield tmp
     shutil.rmtree(tmp)
-
 
 def get_build_image(config):
     """
@@ -41,7 +41,6 @@ def get_build_image(config):
         builder_image = "{}/{}:{}-py{}-{}".format("m1l0", config['framework'], config['version'], config['pyversion'], config['resource'])
 
     return builder_image
-
 
 def create_dockerfile(config, tmpl_dir, code_dir, dockerfile_path=None, has_requirements=False, save_file=False, local=False, ecr_prefix=None):
     """
@@ -149,10 +148,27 @@ def create_archive(target_dir, tmp_code_path):
 
     return archive
 
+def retries(max_retry_count, exception_message_prefix, seconds_to_sleep=10):
+    for i in range(max_retry_count):
+        yield i
+        time.sleep(seconds_to_sleep)
+    raise Exception(
+        "'{}' has reached the maximum retry count of {}".format(
+            exception_message_prefix, max_retry_count
+        )
+    )
+
+
 def service_login(service, tag=None):
     api_client = docker_api_client()
     
-    unseal_vault()
+    if vault_still_sealed():
+        for _ in retries(max_retry_count=5, 
+                         seconds_to_sleep=30, 
+                         exception_message_prefix="Waiting for Vault to unseal..."):
+            unseal_vault()
+            if check_mounts():
+                break
 
     if service == "dockerhub":
         auth_config = fetch_credentials("dockerhub")
@@ -199,7 +215,6 @@ def build_docker_image(tar_archive, tag, labels, encoding="utf-8"):
     } 
 
     try:
-        loglines = []
         logs = api_client.build(**args)
         for log in logs:
             res = process_build_log(log)
@@ -207,10 +222,9 @@ def build_docker_image(tar_archive, tag, labels, encoding="utf-8"):
                 raise APIError(res)
             else:
                 module_logger.info(res)
-                # loglines.append(res)
                 yield res
 
-        # return tag, loglines
+        yield "imagename: {}".format(tag)
     except ImageNotFound as e:
         module_logger.error("Error with building image: {}".format(e))
     except APIError as e:
@@ -271,7 +285,8 @@ def push_docker_image(image, service, repository=None):
                 yield res
 
         full_repo_name = "{}:{}".format(repo_name, tag)
-        # return full_repo_name
+
+        yield "repository: {}".format(full_repo_name)
     except ImageNotFound as e:
         module_logger.error("Error with pushing image: {}".format(e))
     except APIError as e:

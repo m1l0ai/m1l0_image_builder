@@ -7,6 +7,7 @@ import time
 import subprocess
 import sys
 from docker import APIClient
+from builder.authentication.vaultclient import unseal_vault, vault_still_sealed, check_mounts
 
 """
 import tarfile
@@ -56,8 +57,7 @@ def create_archive(tmp_code_path):
     return tarstream
 
 
-if __name__ == "__main__":
-
+def test_docker():
     client = docker.from_env()
 
     # create initial container to bind volume to
@@ -106,8 +106,6 @@ if __name__ == "__main__":
 
     datavol_attached.remove()
 
-
-
     # local_path = "/media/chee/DISK D/mlops/m1l0_trainerv2/examples"
     # tarstream = create_archive(local_path)
     # print(tarstream)
@@ -117,3 +115,10 @@ if __name__ == "__main__":
 
     # resp = datavol_attached.stop()
     # print(resp)
+
+
+
+if __name__ == "__main__":
+    # vault_still_sealed()
+    unseal_vault()
+    check_mounts()

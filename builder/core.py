@@ -28,14 +28,12 @@ class GetSourceFiles:
 
         tmp_path = os.path.join(tempfile.gettempdir(), "code")
 
-        print("PARSED URL > ", parsed_url)
-        print("TMP DIR CONTENTS > ", os.listdir(tmp_path))
+        # print("PARSED URL > ", parsed_url)
+        # print("TMP DIR CONTENTS > ", os.listdir(tmp_path))
 
         # normally this is a uuid
         code_path = self.request.id
         code_copy_path = os.path.join(tmp_path, code_path)
-        # if os.path.exists(code_copy_path):
-        #     shutil.rmtree(code_copy_path)
 
         if parsed_url.scheme == "dir":
             # Assume that the dir refers to an existing path inside the mounted volume of this container
@@ -107,19 +105,22 @@ class ImageBuilder:
 
         tag = "{}/{}:{}".format(self.config["namespace"], self.config["name"], self.config["revision"])
 
-        # TODO: Both build_docker_image and push_docker_image should return stream of logs...
-
         for log in build_docker_image(build_context, tag, labels):
-            yield log
-
-        # return image_name, repository_name
+            if "imagename:" in log:
+                self.imagename = log
+                continue
+            else:
+                yield log
 
     def push(self):
         tag = "{}/{}:{}".format(self.config.get("namespace"), self.config.get("name"), self.config.get("revision"))
 
         for log in push_docker_image(tag, self.config.get("service"), self.config.get("repository")):
-            yield log
-
+            if "repository:" in log:
+                self.repository = log
+                continue
+            else:
+                yield log
 
     def cleanup(self):
         shutil.rmtree(self.code_copy_path)

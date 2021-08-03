@@ -3,6 +3,20 @@ import os
 import json
 
 
+def check_mounts():
+    """
+    Checks 
+    """
+    vault_token = os.environ.get("VAULT_TOKEN")
+    vault_host = os.environ.get("VAULT_ADDR")
+    headers = {"X-Vault-Token": vault_token}
+    resp = requests.get("{}/v1/sys/mounts".format(vault_host), headers=headers).json()
+    if "errors" in resp.keys():
+        print(resp["errors"][0])
+        return False
+    else:
+        return True
+
 def vault_still_sealed():
     """
     Checks the seal status of vault
@@ -11,18 +25,18 @@ def vault_still_sealed():
     else returns False
     """
     vault_host = os.environ.get("VAULT_ADDR")
-    resp = requests.post("{}/v1/sys/seal-status".format(vault_host))
+    resp = requests.get("{}/v1/sys/seal-status".format(vault_host))
+
     if resp.status_code == 200:
         status = resp.json()["sealed"]
         progress = resp.json()["progress"]
 
-        if status == True and progress > 1:
+        if status == True:
             print("Vault still sealed")
             return True
-        elif status == False and progress == 0:
+        elif status == False:
             print("Vault unsealed")
             return False
-
 
 def unseal_vault():
     """

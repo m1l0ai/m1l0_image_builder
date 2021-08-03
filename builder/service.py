@@ -19,8 +19,6 @@ class ImageBuilderService(image_builder_pb2_grpc.ImageBuilderServicer):
         # print(context)
         code_copy_path = GetSourceFiles(request).call()
 
-        # image_name, buildlogs = builder.build()
-
         builder = ImageBuilder(request, code_copy_path)
 
         for log in builder.build():
@@ -28,6 +26,9 @@ class ImageBuilderService(image_builder_pb2_grpc.ImageBuilderServicer):
 
         for log in builder.push():
             yield BuildLog(body=log)
+
+        for item in [builder.imagename, builder.repository]:
+            yield BuildLog(body=item)
 
         builder.cleanup()
 
