@@ -1,5 +1,5 @@
 import image_builder_pb2_grpc as image_builder_pb2_grpc
-from image_builder_pb2 import BuildRequest, BuildResponse, BuildTags
+from image_builder_pb2 import BuildResponse, BuildLog
 from core import GetSourceFiles, ImageBuilder
 from concurrent import futures
 import sys
@@ -18,9 +18,18 @@ class ImageBuilderService(image_builder_pb2_grpc.ImageBuilderServicer):
         # print(request)
         # print(context)
         code_copy_path = GetSourceFiles(request).call()
-        image_name, repository_name = ImageBuilder(request, code_copy_path).call()
-        
-        return BuildResponse(image=image_name, repository=repository_name)
+
+        # image_name, buildlogs = builder.build()
+
+        builder = ImageBuilder(request, code_copy_path)
+
+        for log in builder.build():
+            yield BuildLog(body=log)
+
+        for log in builder.push():
+            yield BuildLog(body=log)
+
+        builder.cleanup()
 
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))

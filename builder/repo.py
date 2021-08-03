@@ -199,6 +199,7 @@ def build_docker_image(tar_archive, tag, labels, encoding="utf-8"):
     } 
 
     try:
+        loglines = []
         logs = api_client.build(**args)
         for log in logs:
             res = process_build_log(log)
@@ -206,8 +207,10 @@ def build_docker_image(tar_archive, tag, labels, encoding="utf-8"):
                 raise APIError(res)
             else:
                 module_logger.info(res)
+                # loglines.append(res)
+                yield res
 
-        return tag
+        # return tag, loglines
     except ImageNotFound as e:
         module_logger.error("Error with building image: {}".format(e))
     except APIError as e:
@@ -265,9 +268,10 @@ def push_docker_image(image, service, repository=None):
                 raise APIError(res)
             else:
                 module_logger.info(res)
+                yield res
 
         full_repo_name = "{}:{}".format(repo_name, tag)
-        return full_repo_name
+        # return full_repo_name
     except ImageNotFound as e:
         module_logger.error("Error with pushing image: {}".format(e))
     except APIError as e:

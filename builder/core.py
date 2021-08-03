@@ -28,11 +28,14 @@ class GetSourceFiles:
 
         tmp_path = os.path.join(tempfile.gettempdir(), "code")
 
+        print("PARSED URL > ", parsed_url)
+        print("TMP DIR CONTENTS > ", os.listdir(tmp_path))
+
         # normally this is a uuid
         code_path = self.request.id
         code_copy_path = os.path.join(tmp_path, code_path)
-        if os.path.exists(code_copy_path):
-            shutil.rmtree(code_copy_path)
+        # if os.path.exists(code_copy_path):
+        #     shutil.rmtree(code_copy_path)
 
         if parsed_url.scheme == "dir":
             # Assume that the dir refers to an existing path inside the mounted volume of this container
@@ -71,7 +74,7 @@ class ImageBuilder:
         self.code_copy_path = code_copy_path
         self.code_path = request.id
 
-    def call(self):
+    def build(self):
         labels = {}
         if self.request.tags:
             for tag in self.request.tags:
@@ -82,7 +85,7 @@ class ImageBuilder:
         if "requirements.txt" in files_list:
             has_requirements = True
 
-        config = {
+        self.config = {
             "namespace": self.request.namespace,
             "name": self.request.name,
             "framework": self.request.framework,
@@ -98,18 +101,25 @@ class ImageBuilder:
 
         tmpl_dir = os.path.join(Path(__file__).resolve().cwd(), "builder", "templates")
 
-        dockerfile = create_dockerfile(config, tmpl_dir, self.code_path, dockerfile_path=None, has_requirements=has_requirements, save_file=False)
+        dockerfile = create_dockerfile(self.config, tmpl_dir, self.code_path, dockerfile_path=None, has_requirements=has_requirements, save_file=False)
 
         build_context = prepare_archive(dockerfile, self.code_copy_path)
 
-        tag = "{}/{}:{}".format(config["namespace"], config["name"], config["revision"])
+        tag = "{}/{}:{}".format(self.config["namespace"], self.config["name"], self.config["revision"])
 
-        image_name = build_docker_image(build_context, tag, labels)
+        # TODO: Both build_docker_image and push_docker_image should return stream of logs...
 
-        # unseal_vault()
-        # auth_config = fetch_credentials(config.get("service"))
-        repository_name = push_docker_image(tag, config.get("service"), config.get("repository"))
+        for log in build_docker_image(build_context, tag, labels):
+            yield log
 
+        # return image_name, repository_name
+
+    def push(self):
+        tag = "{}/{}:{}".format(self.config.get("namespace"), self.config.get("name"), self.config.get("revision"))
+
+        for log in push_docker_image(tag, self.config.get("service"), self.config.get("repository")):
+            yield log
+
+
+    def cleanup(self):
         shutil.rmtree(self.code_copy_path)
-
-        return image_name, repository_name

@@ -3,6 +3,10 @@ import os
 import tarfile
 import tempfile
 from io import BytesIO
+import time
+import subprocess
+import sys
+from docker import APIClient
 
 """
 import tarfile
@@ -48,6 +52,7 @@ def create_archive(tmp_code_path):
         p = os.path.join(tmp_code_path, x)
         archive.add(p, arcname=os.path.join(".", x))
 
+    archive.close()
     return tarstream
 
 
@@ -67,16 +72,48 @@ if __name__ == "__main__":
         },   
     }
 
-    datavol_attached = client.containers.run(
+    datavol_attached = client.containers.create(
         "ubuntu:18.04",
-        command="mkdir -p /tmp/code/mytestdata",
+        # command="mkdir -p /tmp/code/mytestdata",
+        # command="tail -f /dev/null",
         **kwargs
     )
 
     print(datavol_attached)
 
     local_path = "/media/chee/DISK D/mlops/m1l0_trainerv2/examples"
-    tarstream = create_archive(local_path)
-    print(tarstream)
-    tarstream.seek(0)
-    datavol_attached.put_archive(path="/tmp/code/mytestdata", data=tarstream)
+
+    cmd = [
+        "docker",
+        "cp",
+        local_path,
+        "datavol-attached:/tmp/code/mytestdata"
+    ]
+
+    cmd_str = " ".join(cmd)
+
+    process = subprocess.Popen(
+        cmd, 
+        stdout=subprocess.PIPE, 
+        stderr=subprocess.STDOUT
+    )
+
+    exit_code = None
+    while exit_code is None:
+        stdout = process.stdout.readline().decode("utf-8")
+        sys.stdout.write(stdout)
+        exit_code = process.poll()
+
+    datavol_attached.remove()
+
+
+
+    # local_path = "/media/chee/DISK D/mlops/m1l0_trainerv2/examples"
+    # tarstream = create_archive(local_path)
+    # print(tarstream)
+    # tarstream.seek(0)
+
+    # datavol_attached.put_archive(path="/tmp/code/mytestdata/", data=tarstream)
+
+    # resp = datavol_attached.stop()
+    # print(resp)

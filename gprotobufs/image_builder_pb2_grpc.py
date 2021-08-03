@@ -14,9 +14,14 @@ class ImageBuilderStub(object):
         Args:
             channel: A grpc.Channel.
         """
-        self.Build = channel.unary_unary(
+        self.Build = channel.unary_stream(
                 '/ImageBuilder/Build',
                 request_serializer=image__builder__pb2.BuildRequest.SerializeToString,
+                response_deserializer=image__builder__pb2.BuildLog.FromString,
+                )
+        self.Query = channel.unary_unary(
+                '/ImageBuilder/Query',
+                request_serializer=image__builder__pb2.BuildQuery.SerializeToString,
                 response_deserializer=image__builder__pb2.BuildResponse.FromString,
                 )
 
@@ -26,7 +31,14 @@ class ImageBuilderServicer(object):
 
     def Build(self, request, context):
         """Simple RPC service for building images
+        rpc Build(BuildRequest) returns (BuildResponse);
         """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def Query(self, request, context):
+        """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
@@ -34,9 +46,14 @@ class ImageBuilderServicer(object):
 
 def add_ImageBuilderServicer_to_server(servicer, server):
     rpc_method_handlers = {
-            'Build': grpc.unary_unary_rpc_method_handler(
+            'Build': grpc.unary_stream_rpc_method_handler(
                     servicer.Build,
                     request_deserializer=image__builder__pb2.BuildRequest.FromString,
+                    response_serializer=image__builder__pb2.BuildLog.SerializeToString,
+            ),
+            'Query': grpc.unary_unary_rpc_method_handler(
+                    servicer.Query,
+                    request_deserializer=image__builder__pb2.BuildQuery.FromString,
                     response_serializer=image__builder__pb2.BuildResponse.SerializeToString,
             ),
     }
@@ -60,8 +77,25 @@ class ImageBuilder(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/ImageBuilder/Build',
+        return grpc.experimental.unary_stream(request, target, '/ImageBuilder/Build',
             image__builder__pb2.BuildRequest.SerializeToString,
+            image__builder__pb2.BuildLog.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def Query(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/ImageBuilder/Query',
+            image__builder__pb2.BuildQuery.SerializeToString,
             image__builder__pb2.BuildResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

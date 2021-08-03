@@ -7,29 +7,9 @@ volumes:
   m1l0-builder:
     external: true
     name: m1l0-builder
-  vault-logs:
-    external: true
-    name: vault-logs
-  vault-file:
-    external: true
-    name: vault-file
-
 
 services:
-  vault:
-    image: vault
-    container_name: vault
-    ports:
-      - "8200:8200"
-    volumes:
-      - vault-logs:/vault/logs:rw
-      - vault-file:/vault/file:rw
-      - ./config:/vault/config
-    cap_add:
-      - IPC_LOCK
-    entrypoint: vault server -config=/vault/config/config.hcl
   builder:
-    privileged: true
     image: m1l0/builder:latest
     container_name: builder
     ports:
