@@ -158,7 +158,6 @@ def retries(max_retry_count, exception_message_prefix, seconds_to_sleep=10):
         )
     )
 
-
 def service_login(service, tag=None):
     api_client = docker_api_client()
     

@@ -52,6 +52,23 @@ def unseal_vault():
         print("Vault unsealed")
         return True
 
+def seal_vault():
+    """
+    Seals the vault again
+
+    Normally after making a request to creds?
+    """
+    vault_token = os.environ.get("VAULT_TOKEN")
+    vault_host = os.environ.get("VAULT_ADDR")
+    headers = {"X-Vault-Token": vault_token}
+    resp = requests.put("{}/v1/sys/seal".format(vault_host), headers=headers)
+
+    if resp.status_code == 204:
+        return False
+    else:
+        return True
+
+
 def get_role_id(rolename):
     """
     Gets the role id of specific rolename
@@ -94,7 +111,9 @@ def get_secret(secret_name, token):
     """
     headers = {"X-Vault-Token": token}
     vault_host = os.environ.get("VAULT_ADDR")
-    resp = requests.get("{}/v1/secret/data/{}".format(vault_host, secret_name), headers=headers)
+    resp = requests.get("{}/v1/m1l0/data/{}".format(vault_host, secret_name), headers=headers)
+    print(resp.status_code)
+    print(resp.text)
 
     if resp.status_code == 200:
         creds = resp.json()["data"]["data"]
@@ -138,3 +157,4 @@ if __name__ == "__main__":
     unseal_vault()
     res = fetch_credentials("github")
     print(res)
+    seal_vault()

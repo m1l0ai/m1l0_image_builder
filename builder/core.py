@@ -28,9 +28,6 @@ class GetSourceFiles:
 
         tmp_path = os.path.join(tempfile.gettempdir(), "code")
 
-        # print("PARSED URL > ", parsed_url)
-        # print("TMP DIR CONTENTS > ", os.listdir(tmp_path))
-
         # normally this is a uuid
         code_path = self.request.id
         code_copy_path = os.path.join(tmp_path, code_path)
