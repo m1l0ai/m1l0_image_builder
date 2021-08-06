@@ -102,7 +102,7 @@ class ImageBuilder:
 
         tag = "{}/{}:{}".format(self.config["namespace"], self.config["name"], self.config["revision"])
 
-        for log in build_docker_image(build_context, tag, labels):
+        for log in build_docker_image(build_context, tag, labels, self.config):
             if "imagename:" in log:
                 self.imagename = log
                 continue

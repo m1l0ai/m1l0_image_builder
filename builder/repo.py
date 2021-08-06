@@ -81,6 +81,8 @@ def create_dockerfile(config, tmpl_dir, code_dir, dockerfile_path=None, has_requ
 
     template = env.get_template("image.jinja")
     builder_image = get_build_image(config)
+    # Set dockerfile from image on config object
+    config["dockerfile_from_image"] = builder_image
 
     dockerfile_str = template.render(builder=builder_image, files=files_copy_cmd, requirements=reqs_cmd, entrypoint=entrypoint, tags=tags)
 
@@ -118,6 +120,11 @@ def process_build_log(log):
     return res
 
 def prepare_archive(dockerfile, tmp_code_path, encoding="utf-8"):
+    """
+    Creates an archive of the build context
+
+    Note that dockerfile is passed in here as a string
+    """
     tarstream = BytesIO()
     archive = tarfile.TarFile(fileobj=tarstream, mode="w")
     dockerfile_str = dockerfile.encode(encoding)
@@ -160,7 +167,7 @@ def retries(max_retry_count, exception_message_prefix, seconds_to_sleep=10):
 
 def service_login(service, tag=None):
     api_client = docker_api_client()
-    
+
     if vault_still_sealed():
         for _ in retries(max_retry_count=5, 
                          seconds_to_sleep=30, 
@@ -183,7 +190,7 @@ def service_login(service, tag=None):
             return status, ecr_url, auth_config
 
 
-def build_docker_image(tar_archive, tag, labels, encoding="utf-8"):
+def build_docker_image(tar_archive, tag, labels, config, encoding="utf-8"):
     """
     Builds docker image with given build context in tar archive
 
@@ -192,13 +199,22 @@ def build_docker_image(tar_archive, tag, labels, encoding="utf-8"):
     """
     module_logger.info("Building project with tag {}".format(tag))
 
-    service_login("dockerhub")
-    service_login("ecr", tag)
+    if "dkr.ecr" in config.get("dockerfile_from_image"):
+        _, _, auth_config = service_login("ecr", tag)
+    else:
+        _, auth_config = service_login("dockerhub")
 
     # Using the low level api so we can stream the build...
     api_client = docker_api_client()
 
-    
+    # try pulling image first with auth
+    target_repo, target_tag = config.get("dockerfile_from_image").split(":")
+    api_client.pull(
+        target_repo,
+        tag=target_tag,
+        auth_config=auth_config
+    )
+
     # Note: Setting pull: True here will cause the docker daemon to only pull images from dockerhub/remote repo so need to set it to false for using local images...
     # https://stackoverflow.com/questions/20481225/how-can-i-use-a-local-image-as-the-base-image-with-a-dockerfile
     args = {
@@ -210,7 +226,7 @@ def build_docker_image(tar_archive, tag, labels, encoding="utf-8"):
         'forcerm': True, 
         'rm': True, 
         'decode': True,
-        'pull': True
+        'pull': False
     } 
 
     try:

@@ -4,7 +4,7 @@ build-protobufs:
 	python -m grpc_tools.protoc -I protobufs --python_out=gprotobufs --grpc_python_out=gprotobufs protobufs/image_builder.proto
 
 build-image:
-	docker build --rm -t m1l0/builder:latest -f Dockerfile .
+	docker build --force-rm -t m1l0/builder:latest -f Dockerfile .
 
 run-service:
 	PYTHONPATH="${PWD}/gprotobufs" \

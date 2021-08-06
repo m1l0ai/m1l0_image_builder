@@ -17,5 +17,4 @@ services:
     volumes:
       - "m1l0-builder:/tmp:rw"
       - "/var/run/docker.sock:/var/run/docker.sock"
-      - "./testconfig.json:/root/.docker/config.json:ro"
     env_file: .env2

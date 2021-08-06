@@ -112,8 +112,6 @@ def get_secret(secret_name, token):
     headers = {"X-Vault-Token": token}
     vault_host = os.environ.get("VAULT_ADDR")
     resp = requests.get("{}/v1/m1l0/data/{}".format(vault_host, secret_name), headers=headers)
-    print(resp.status_code)
-    print(resp.text)
 
     if resp.status_code == 200:
         creds = resp.json()["data"]["data"]

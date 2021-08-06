@@ -17,6 +17,13 @@ To run test client:
 
 * Healthcheck for grpc service
 
+  Example implementation here:
+  https://github.com/grpc/grpc/tree/master/examples/python/xds
+
 * Use grpc interceptors to return appropriate errors...
 
   Useful to use interceptors for request params validation
+
+* Change to using buildah for the builds ?? Install and package buildah with the service image ???
+
+* Move protobufs into its own package and reimport it here...

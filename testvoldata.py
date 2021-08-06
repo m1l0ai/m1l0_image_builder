@@ -120,5 +120,7 @@ def test_docker():
 
 if __name__ == "__main__":
     # vault_still_sealed()
-    unseal_vault()
-    check_mounts()
+    # unseal_vault()
+    # check_mounts()
+
+    test_docker()
