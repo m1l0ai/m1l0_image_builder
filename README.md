@@ -17,6 +17,9 @@ To run test client:
 
 * Healthcheck for grpc service
 
+
+  https://stackoverflow.com/questions/56984565/python-grpc-health-check
+
   Example implementation here:
   https://github.com/grpc/grpc/tree/master/examples/python/xds
 
@@ -36,7 +39,12 @@ To run test client:
   
   ```
 
-  https://stackoverflow.com/questions/56984565/python-grpc-health-check
+  How do we use the grpcurl as HEALTHCHECK in Dockerfile?
+
+  use: https://github.com/grpc-ecosystem/grpc-health-probe/
+  
+  https://medium.com/geekculture/implementing-healthchecks-in-grpc-containers-for-kubernetes-d5049989ab12
+
 
 
 * Move protobufs into its own package and reimport it here...

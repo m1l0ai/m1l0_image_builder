@@ -13,6 +13,15 @@ COPY requirements.txt .
 RUN ${PYTHON} -m ${PIP} install --upgrade pip setuptools && \
     ${PYTHON} -m ${PIP} install --no-cache-dir --user -r requirements.txt
 
+RUN apt-get update && apt-get install -y --no-install-recommends -y \
+    wget && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install GRPC HEALTH PROBE
+RUN GRPC_HEALTH_PROBE_VERSION=v0.4.4 && \
+    wget -qO/bin/grpc_health_probe https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/${GRPC_HEALTH_PROBE_VERSION}/grpc_health_probe-linux-amd64 
+
 
 # Second stage of multistage build
 FROM python:${PYTHON_VERSION}-slim
@@ -47,5 +56,12 @@ COPY --from=builder /root/.local /root/.local
 COPY ./gprotobufs /gprotobufs
 
 COPY ./builder /builder
+
+# Copy healthprobe
+COPY --from=builder /bin/grpc_health_probe /bin/grpc_health_probe
+
+RUN chmod +x /bin/grpc_health_probe
+
+HEALTHCHECK --interval=10s --retries=3 CMD /bin/grpc_health_probe -addr=localhost:50051
 
 ENTRYPOINT ["python", "builder/service.py"]
