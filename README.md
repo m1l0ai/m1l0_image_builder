@@ -20,10 +20,30 @@ To run test client:
   Example implementation here:
   https://github.com/grpc/grpc/tree/master/examples/python/xds
 
+
+  To test using grpcurl:
+  ```
+  docker run --rm --network m1l0net fullstorydev/grpcurl:latest --plaintext builder:50051 list
+
+
+  docker run --rm --network m1l0net fullstorydev/grpcurl:latest --plaintext -d '{"service": "ImageBuilder"}' builder:50051 grpc.health.v1.Health/Check
+
+  => should return {"status": "Serving"} if running
+
+  docker run --rm --network m1l0net fullstorydev/grpcurl:latest --plaintext -d '{"service": ""}' builder:50051 grpc.health.v1.Health/Check
+
+  => should return {"status": "Serving"} if running
+  
+  ```
+
+  https://stackoverflow.com/questions/56984565/python-grpc-health-check
+
+
+* Move protobufs into its own package and reimport it here...
+
+
 * Use grpc interceptors to return appropriate errors...
 
   Useful to use interceptors for request params validation
 
 * Change to using buildah for the builds ?? Install and package buildah with the service image ???
-
-* Move protobufs into its own package and reimport it here...

@@ -1,9 +1,14 @@
 import image_builder_pb2_grpc as image_builder_pb2_grpc
+import image_builder_pb2
 from image_builder_pb2 import BuildResponse, BuildLog
 from core import GetSourceFiles, ImageBuilder
 from concurrent import futures
 import sys
 import grpc
+from grpc_health.v1 import health
+from grpc_health.v1 import health_pb2
+from grpc_health.v1 import health_pb2_grpc
+from grpc_reflection.v1alpha import reflection
 from signal import signal, SIGTERM, SIGINT
 import logging
 
@@ -38,7 +43,6 @@ def serve():
     image_builder_pb2_grpc.add_ImageBuilderServicer_to_server(ImageBuilderService(), server)
 
     server.add_insecure_port("[::]:50051")
-    server.start()
 
     def handle_sigterm(*_):
         module_logger.info("Received shutdown...")
@@ -50,6 +54,28 @@ def serve():
     signal(SIGTERM, handle_sigterm)
     signal(SIGINT, handle_sigterm)
 
+    # Starting healthcheck service...
+    health_servicer = health.HealthServicer(
+        experimental_non_blocking=True,
+        experimental_thread_pool=futures.ThreadPoolExecutor(
+            max_workers=10))
+
+    health_pb2_grpc.add_HealthServicer_to_server(health_servicer, server)
+
+    services = tuple(
+        service.full_name
+        for service in image_builder_pb2.DESCRIPTOR.services_by_name.values()) + (
+            reflection.SERVICE_NAME, health.SERVICE_NAME)
+
+    module_logger.info("Services > {}".format(services))
+    for service in services:
+        health_servicer.set(service, health_pb2.HealthCheckResponse.SERVING)
+
+    
+    # Need to enable reflection below to allow use of grpcurl
+    reflection.enable_server_reflection(services, server)
+
+    server.start()
     server.wait_for_termination()
 
 if __name__ == "__main__":
