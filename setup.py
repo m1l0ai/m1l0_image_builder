@@ -31,13 +31,9 @@ setup(
         "docker~=5.0.0",
         "click==7.1.1",
         "Jinja2~=2.11",
-        "grpcio-tools~=1.30"
+        "grpcio-tools~=1.30",
+        "m1l0-protobufs~=0.1.0"
     ],
     setup_requires=['pytest-runner', 'flake8'],
-    tests_require=['pytest'],
-    entry_points={
-        # 'console_scripts': [
-        #     'm1l0_builder=builder.cli:main'
-        # ]
-    },
+    tests_require=['pytest']
 )

@@ -40,8 +40,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PYTHONIOENCODING=UTF-8 \ 
-    PATH=/root/.local:/root/.local/bin:$PATH \
-    PYTHONPATH=/gprotobufs
+    PATH=/root/.local:/root/.local/bin:$PATH
 
 RUN apt-get update && apt-get install -y --no-install-recommends -y \
     curl \
@@ -50,10 +49,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends -y \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-
 COPY --from=builder /root/.local /root/.local
-
-COPY ./gprotobufs /gprotobufs
 
 COPY ./builder /builder
 

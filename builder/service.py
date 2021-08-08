@@ -1,7 +1,8 @@
-import image_builder_pb2_grpc as image_builder_pb2_grpc
-import image_builder_pb2
-from image_builder_pb2 import BuildResponse, BuildLog
-from core import GetSourceFiles, ImageBuilder
+from m1l0_services.imagebuilder import image_builder_pb2_grpc
+from m1l0_services.imagebuilder import image_builder_pb2
+from m1l0_services.imagebuilder.image_builder_pb2 import BuildResponse, BuildLog
+from core.retriever import GetSourceFiles
+from core.imagebuilder import ImageBuilder
 from concurrent import futures
 import sys
 import grpc

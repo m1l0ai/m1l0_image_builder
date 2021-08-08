@@ -8,3 +8,4 @@ PyGithub~=1.55
 pytest~=5.4.1
 grpcio-reflection
 grpcio-health-checking
+m1l0_protobufs~=0.1.0

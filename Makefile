@@ -7,12 +7,15 @@ build-image:
 	docker build --force-rm -t m1l0/builder:latest -f Dockerfile .
 
 run-service:
-	PYTHONPATH="${PWD}/gprotobufs" \
 	python builder/service.py
 
 run-client:
-	 PYTHONPATH="${PWD}/gprotobufs:${PWD}/builder" \
-	 python testpackage.py 
+	 PYTHONPATH="${PWD}/builder" \
+	 python testpackage.py
+
+run-tests:
+	PYTHONPATH="${PWD}/builder" \
+	python setup.py test
 
 remove-volumes:
 	docker volume ls --filter label=m1l0.job-id --format "{{.Name}}" | xargs -r docker volume rm
