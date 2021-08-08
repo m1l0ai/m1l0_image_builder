@@ -1,6 +1,6 @@
 # Core classes for building images
-from authentication.vaultclient import fetch_credentials, unseal_vault
-from repo import create_dockerfile, prepare_archive, build_docker_image, push_docker_image
+from builder.authentication.vaultclient import fetch_credentials, unseal_vault
+from .repo import create_dockerfile, prepare_archive, build_docker_image, push_docker_image
 from github import Github
 import tempfile
 import os

@@ -52,6 +52,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends -y \
 COPY --from=builder /root/.local /root/.local
 
 COPY ./builder /builder
+COPY ./main.py /main.py
 
 # Copy healthprobe
 COPY --from=builder /bin/grpc_health_probe /bin/grpc_health_probe
@@ -60,4 +61,4 @@ RUN chmod +x /bin/grpc_health_probe
 
 HEALTHCHECK --interval=10s --retries=3 CMD /bin/grpc_health_probe -addr=localhost:50051
 
-ENTRYPOINT ["python", "builder/service.py"]
+ENTRYPOINT ["python", "main.py"]

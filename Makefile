@@ -7,15 +7,20 @@ build-image:
 	docker build --force-rm -t m1l0/builder:latest -f Dockerfile .
 
 run-service:
-	python builder/service.py
+	python main.py
 
 run-client:
-	 PYTHONPATH="${PWD}/builder" \
 	 python testpackage.py
 
 run-tests:
-	PYTHONPATH="${PWD}/builder" \
 	python setup.py test
+
+check-service:
+	docker run --rm --network m1l0net fullstorydev/grpcurl:latest --plaintext builder:50051 list
+
+	docker run --rm --network m1l0net fullstorydev/grpcurl:latest --plaintext -d '{"service": ""}' builder:50051 grpc.health.v1.Health/Check
+
+	docker run --rm --network m1l0net fullstorydev/grpcurl:latest --plaintext -d '{"service": "grpc.m1l0_services.imagebuilder.ImageBuilder"}' builder:50051 grpc.health.v1.Health/Check
 
 remove-volumes:
 	docker volume ls --filter label=m1l0.job-id --format "{{.Name}}" | xargs -r docker volume rm

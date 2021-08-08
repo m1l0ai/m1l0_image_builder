@@ -32,7 +32,7 @@ setup(
         "click==7.1.1",
         "Jinja2~=2.11",
         "grpcio-tools~=1.30",
-        "m1l0-protobufs~=0.1.0"
+        "m1l0-protobufs~=0.2.0"
     ],
     setup_requires=['pytest-runner', 'flake8'],
     tests_require=['pytest']

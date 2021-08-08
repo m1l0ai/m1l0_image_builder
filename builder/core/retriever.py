@@ -6,7 +6,7 @@ from urllib.parse import urlparse
 import pkg_resources
 from pathlib import Path
 import traceback
-from authentication.vaultclient import fetch_credentials, unseal_vault
+from builder.authentication.vaultclient import fetch_credentials, unseal_vault
 
 
 

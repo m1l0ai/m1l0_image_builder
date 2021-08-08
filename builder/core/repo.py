@@ -1,7 +1,7 @@
 # Functions for building docker images
-from clients.docker import docker_client, docker_api_client
-from authentication.authenticate import authenticate_docker_client, authenticate_ecr
-from authentication.vaultclient import fetch_credentials, unseal_vault, vault_still_sealed, check_mounts
+from builder.clients.docker import docker_client, docker_api_client
+from builder.authentication.authenticate import authenticate_docker_client, authenticate_ecr
+from builder.authentication.vaultclient import fetch_credentials, unseal_vault, vault_still_sealed, check_mounts
 from docker.errors import APIError
 from docker.errors import ImageNotFound
 from jinja2 import Environment, FileSystemLoader

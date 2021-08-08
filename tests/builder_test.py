@@ -1,4 +1,4 @@
-from builder.service import ImageBuilderService
+from builder.service.imageservice import ImageBuilderService
 from m1l0_services.imagebuilder.image_builder_pb2 import BuildRequest
 
 

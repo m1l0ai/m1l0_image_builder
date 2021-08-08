@@ -1,3 +1,4 @@
+from builder.service.
 import logging
 import click
 
@@ -15,13 +16,12 @@ version = '1.0.0'
 
 @click.group()
 def main():
-    """M1L0 Machine Learning Operations CLI"""
+    """M1L0 Image Builder"""
     pass
 
 @click.command()
-@click.argument("config_file")
-def build(config_file):
-    """Builds a new Docker image with given config"""
+def start():
+    """Starts ImageBuilder service"""
     pass
 
-main.add_command(build)
+main.add_command(start)
