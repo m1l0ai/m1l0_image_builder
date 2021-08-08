@@ -3,13 +3,17 @@ from setuptools import setup, find_packages
 
 HERE = os.path.abspath(os.path.dirname(__file__))
 
-with open(os.path.join(HERE, "README.md")) as f:
-    README = f.read()
+README_PATH = os.path.join(HERE, "README.md")
+if os.path.exists(README_PATH):
+    with open(README_PATH) as f:
+        README = f.read()
+else:
+    README = "gRPC ImageBuilder service"
 
 setup(
     name="m1l0-builder",
     version="1.0.0",
-    description="M1L0 Image Builder",
+    description="gRPC service for building docker images",
     long_description=README,
     long_description_content_type="text/markdown",
     url="https://github.com/m1l0",
@@ -29,11 +33,16 @@ setup(
     },
     install_requires=[
         "docker~=5.0.0",
-        "click==7.1.1",
+        "click==8.0.1",
         "Jinja2~=2.11",
         "grpcio-tools~=1.30",
         "m1l0-protobufs~=0.2.0"
     ],
+    entry_points={
+        "console_scripts": [
+            "builder = builder.cli.cli:start"
+        ]
+    },
     setup_requires=['pytest-runner', 'flake8'],
     tests_require=['pytest']
 )

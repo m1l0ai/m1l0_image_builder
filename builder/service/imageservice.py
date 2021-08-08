@@ -16,6 +16,10 @@ import logging
 
 logging.basicConfig(level=logging.INFO)
 module_logger = logging.getLogger("builder")
+console_handler = logging.StreamHandler()
+formatter = logging.Formatter(fmt='%(asctime)s: %(levelname)-8s %(message)s')
+console_handler.setFormatter(formatter)
+module_logger.addHandler(console_handler)
 
 
 class ImageBuilderService(image_builder_pb2_grpc.ImageBuilderServicer):
@@ -38,12 +42,14 @@ class ImageBuilderService(image_builder_pb2_grpc.ImageBuilderServicer):
 
         builder.cleanup()
 
-def serve():
+def serve(host, port):
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
 
     image_builder_pb2_grpc.add_ImageBuilderServicer_to_server(ImageBuilderService(), server)
 
-    server.add_insecure_port("[::]:50051")
+    listen_address = "{}:{}".format(host, port)
+
+    server.add_insecure_port(listen_address)
 
     def handle_sigterm(*_):
         module_logger.info("Received shutdown...")
@@ -78,7 +84,3 @@ def serve():
 
     server.start()
     server.wait_for_termination()
-
-if __name__ == "__main__":
-    module_logger.info("Starting ImageBuilder service....")
-    serve()

@@ -48,7 +48,7 @@ def create_dockerfile(config, tmpl_dir, code_dir, dockerfile_path=None, has_requ
 
     Receives a temp directory of the project to add the required files to build the dockerfile...
     """
-    module_logger.info("[TrainJob] Creating dockerfile...")
+    module_logger.info("[ImageBuilder] Creating dockerfile...")
 
     proj_name = config['name']
     project_dir = '/opt/model'

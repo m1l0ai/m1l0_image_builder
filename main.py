@@ -1,11 +1,17 @@
 from builder.service.imageservice import serve
+import click
 import logging
 
+version = '1.0.0'
+@click.version_option(version)
 
-logging.basicConfig(level=logging.INFO)
-module_logger = logging.getLogger("builder")
-
+@click.command()
+@click.option("--host", default="[::]", type=str)
+@click.option("--port", default=50051, type=int)
+def start(host, port):
+    """Starts ImageBuilder service"""
+    print("Starting ImageBuilder service on host {} port {} ...".format(host, port))
+    serve(host, port)
 
 if __name__ == "__main__":
-    module_logger.info("Starting ImageBuilder service on port 50051 ...")
-    serve()
+    start()

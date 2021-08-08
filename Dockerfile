@@ -8,10 +8,14 @@ ARG PYTHON
 ARG PIP
 ARG PYTHON_VERSION
 
+SHELL ["/bin/bash", "-c"]
+
 COPY requirements.txt .
 
-RUN ${PYTHON} -m ${PIP} install --upgrade pip setuptools && \
-    ${PYTHON} -m ${PIP} install --no-cache-dir --user -r requirements.txt
+RUN ${PYTHON} -m venv /myvenv && \
+    source /myvenv/bin/activate && \
+    ${PYTHON} -m ${PIP} install --upgrade pip setuptools && \
+    ${PYTHON} -m ${PIP} install --no-cache-dir -r requirements.txt
 
 RUN apt-get update && apt-get install -y --no-install-recommends -y \
     wget && \
@@ -25,6 +29,8 @@ RUN GRPC_HEALTH_PROBE_VERSION=v0.4.4 && \
 
 # Second stage of multistage build
 FROM python:${PYTHON_VERSION}-slim
+ARG PYTHON
+ARG PIP
 
 LABEL maintainer="M1L0 ckyeo.1@gmail.com"
 LABEL m1l0.component="builder"
@@ -40,7 +46,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PYTHONIOENCODING=UTF-8 \ 
-    PATH=/root/.local:/root/.local/bin:$PATH
+    PATH=/myvenv/bin:$PATH
 
 RUN apt-get update && apt-get install -y --no-install-recommends -y \
     curl \
@@ -49,7 +55,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends -y \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /root/.local /root/.local
+COPY --from=builder /myvenv /myvenv
 
 COPY ./builder /builder
 COPY ./main.py /main.py

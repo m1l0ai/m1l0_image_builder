@@ -1,27 +1,22 @@
-from builder.service.
-import logging
+from builder.service.imageservice import serve
 import click
+import logging
 
 
 stdformatter = logging.Formatter('%(levelname)s: %(name)s: %(message)s')
 ch = logging.StreamHandler()
 ch.setFormatter(stdformatter)
 
-logger = logging.getLogger('m1l0')
+logger = logging.getLogger('builder')
 logger.setLevel("INFO")
 logger.addHandler(ch)
 
 version = '1.0.0'
 @click.version_option(version)
 
-@click.group()
-def main():
-    """M1L0 Image Builder"""
-    pass
-
 @click.command()
-def start():
+@click.option("--host", default="[::]", type=str)
+@click.option("--port", default=50051, type=int)
+def start(host, port):
     """Starts ImageBuilder service"""
-    pass
-
-main.add_command(start)
+    serve(host, port)
