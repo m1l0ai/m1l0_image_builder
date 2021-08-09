@@ -32,6 +32,9 @@ class GetSourceFiles:
         code_copy_path = os.path.join(tmp_path, code_path)
 
         if parsed_url.scheme == "dir":
+            if not os.path.exists(parsed_url.path):
+                raise Exception("Directory {} does not exist!".format(parsed_url.path))
+
             # Assume that the dir refers to an existing path inside the mounted volume of this container
 
             try:

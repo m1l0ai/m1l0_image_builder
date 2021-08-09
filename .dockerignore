@@ -2,6 +2,7 @@ __pycache__
 .git
 .gitignore
 .env
+.env2
 Makefile
 *.md
 *.cfg
