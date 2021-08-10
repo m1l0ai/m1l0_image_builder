@@ -4,7 +4,7 @@ FROM ${BUILDER}
 
 {%- if tags %}
 {% for k, v in tags.items() -%}
-LABEL {{ k|lower }}={{ v }}
+LABEL "{{ k|lower }}"="{{ v }}"
 {% endfor %}
 {% endif %}
 
