@@ -40,15 +40,11 @@ class GetSourceFiles:
 
             try:
                 # Copy from parsed_url.path to temp dir to remove ignores
-                # shutil.move(parsed_url.path, code_copy_path + "_tmp")
-                # # Copy from temp back to code_copy_path
-                # shutil.copytree(code_copy_path + "_tmp", code_copy_path, ignore=shutil.ignore_patterns(*ignores))
+                shutil.move(parsed_url.path, code_copy_path + "_tmp")
+                # Copy from temp back to code_copy_path
+                shutil.copytree(code_copy_path + "_tmp", code_copy_path, ignore=shutil.ignore_patterns(*ignores))
 
-                # shutil.rmtree(code_copy_path + "_tmp")
-
-
-                shutil.copytree(parsed_url.path, code_copy_path, ignore=shutil.ignore_patterns(*ignores))
-                shutil.rmtree(parsed_url.path)
+                shutil.rmtree(code_copy_path + "_tmp")
             except Exception as e:
                 error_msg = "Dir copy error: \n{}\n{}".format(traceback.format_exc(), str(e))
                 print(error_msg)
