@@ -6,9 +6,9 @@ from urllib.parse import urlparse
 import pkg_resources
 from pathlib import Path
 import traceback
+import tarfile
 from builder.authentication.authenticate import session_client
 from builder.authentication.vaultclient import fetch_credentials, unseal_vault
-
 
 
 class GetSourceFiles:
@@ -53,19 +53,22 @@ class GetSourceFiles:
                 error_msg = "Dir copy error: \n{}\n{}".format(traceback.format_exc(), str(e))
                 print(error_msg)
         elif parsed_url.scheme == "s3":
-            # TODO
-            # path will be compressed tar archive
-            # need to extract
-
-
             # Get token
             unseal_vault()
             auth_config = fetch_credentials("ecr")
             s3_client = session_client(auth_config).client("s3")
-            # Downloads from s3 bucket into local tmp folder..
             
+            # Downloads from s3 bucket into local tmp folder..
+            s3_target = parsed_url.path.lstrip("/")
+            local_target = f"{code_copy_path}.tar.gz"
+            s3_client.download_file("m1l0training", s3_target, local_target)
 
+            with tarfile.open(local_target) as t:
+                t.extractall(code_copy_path + "_tmp")
+            shutil.copytree(code_copy_path + "_tmp", code_copy_path, ignore=shutil.ignore_patterns(*ignores))
 
+            shutil.rmtree(code_copy_path + "_tmp")
+            os.remove(local_target)
         elif ".git" in parsed_url.path:
             # Get token
             unseal_vault()
@@ -77,5 +80,7 @@ class GetSourceFiles:
             os.system(cmd)
             
             shutil.copytree(code_copy_path + "_tmp", code_copy_path, ignore=shutil.ignore_patterns(*ignores))
+
+            shutil.rmtree(code_copy_path + "_tmp")
 
         return code_copy_path
