@@ -81,13 +81,13 @@ def test_docker():
 
     print(datavol_attached)
 
-    local_path = "/media/chee/DISK D/mlops/m1l0_trainerv2/examples"
+    local_path = "/media/chee/DISK D/mlops/mnist_example"
 
     cmd = [
         "docker",
         "cp",
         local_path,
-        "datavol-attached:/tmp/code/mytestdata"
+        "datavol-attached:/tmp/code/mytestdata_new"
     ]
 
     cmd_str = " ".join(cmd)

@@ -28,7 +28,6 @@ def test_dir_exists(create_tmp_directory):
 
         code_path = retriever.call()
         assert code_path == "/tmp/code/123"
-        assert not os.path.exists(orig_dir), "Orig dir should have been renamed"
         assert os.path.exists(new_dir) == True, "Moved to new directory"
         assert os.path.exists(new_fpath) == True, "Moved contents to new directory"
 
@@ -53,8 +52,6 @@ def test_dir_exists_with_ignores(create_tmp_directory):
 
         code_path = retriever.call()
         assert code_path == "/tmp/code/123"
-        # Test that orig dir is deleted
-        assert os.path.exists(orig_dir) == False, "Orig dir should have been deleted"
         assert os.path.exists(new_dir) == True, "Moved to new directory"
         assert os.path.exists(new_fpath) == False, "File should have been ignored"
-        assert os.path.exists(new_dpath) == False
+        assert os.path.exists(new_dpath) == False, "Directory should have been ignored"

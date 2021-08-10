@@ -10,6 +10,17 @@ def get_ecr_image_prefix(session, region='us-east-1'):
     account_id = session.client('sts').get_caller_identity().get('Account')
     return "{}.dkr.ecr.{}.amazonaws.com".format(account_id, region)
 
+def session_client(auth_config):
+    """
+    Creates and returns a boto3 session client
+    """
+    region = auth_config.get("region")
+    access_key = auth_config.get("access_key")
+    secret_access_key = auth_config.get("secret_access_key")
+
+    session = boto3.session.Session(aws_access_key_id=access_key, aws_secret_access_key=secret_access_key, region_name=region)
+
+    return session
 
 def authenticate_ecr(auth_config, tag):
     """
@@ -21,12 +32,7 @@ def authenticate_ecr(auth_config, tag):
     auth_config => dict of aws creds
     tag => name of repository
     """
-    region = auth_config.get("region")
-    access_key = auth_config.get("access_key")
-    secret_access_key = auth_config.get("secret_access_key")
-
-    session = boto3.session.Session(aws_access_key_id=access_key, aws_secret_access_key=secret_access_key, region_name=region)
-
+    session = session_client(auth_config)
     ecr_client = session.client("ecr", region_name=region)
     ecr_prefix = get_ecr_image_prefix(session, region)
 
