@@ -1,10 +1,5 @@
 ### TODO:
 
-* Refactor the code retrieval to add more formats
-
-  core/retriever.py
-
-
 * Healthcheck for grpc service
 
   https://stackoverflow.com/questions/56984565/python-grpc-health-check
@@ -18,7 +13,7 @@
   docker run --rm --network m1l0net fullstorydev/grpcurl:latest --plaintext builder:50051 list
 
 
-  docker run --rm --network m1l0net fullstorydev/grpcurl:latest --plaintext -d '{"service": "protobufs.m1l0_services.imagebuilder.ImageBuilder"}' builder:50051 grpc.health.v1.Health/Check
+  docker run --rm --network m1l0net fullstorydev/grpcurl:latest --plaintext -d '{"service": "grpc.m1l0_services.imagebuilder.ImageBuilder"}' builder:50051 grpc.health.v1.Health/Check
 
   => should return {"status": "Serving"} if running
 
@@ -41,6 +36,11 @@
 
 * Change to using buildah for the builds ?? Install and package buildah with the service image ???
 
+* If Dockerfile exists in build context or specified in config file in request we use it instead
+
+* How to inject sensitive creds into container??
+
+https://aws.amazon.com/premiumsupport/knowledge-center/ecs-data-security-container-task/
 
 
 https://stackoverflow.com/questions/44077407/is-there-a-way-to-automatically-activate-a-virtualenv-as-a-docker-entrypoint

@@ -15,10 +15,8 @@ def session_client(auth_config):
     Creates and returns a boto3 session client
     """
     region = auth_config.get("region")
-    access_key = auth_config.get("access_key")
-    secret_access_key = auth_config.get("secret_access_key")
-
-    session = boto3.session.Session(aws_access_key_id=access_key, aws_secret_access_key=secret_access_key, region_name=region)
+    profile = auth_config.get("profile")
+    session = boto3.session.Session(profile_name=profile, region_name=region)
 
     return session
 
@@ -33,6 +31,7 @@ def authenticate_ecr(auth_config, tag):
     tag => name of repository
     """
     session = session_client(auth_config)
+    region = auth_config.get("region")
     ecr_client = session.client("ecr", region_name=region)
     ecr_prefix = get_ecr_image_prefix(session, region)
 

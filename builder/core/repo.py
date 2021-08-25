@@ -1,7 +1,7 @@
 # Functions for building docker images
 from builder.clients.docker import docker_client, docker_api_client
 from builder.authentication.authenticate import authenticate_docker_client, authenticate_ecr
-from builder.authentication.vaultclient import fetch_credentials, unseal_vault, vault_still_sealed, check_mounts
+from builder.authentication.ssm import fetch_credentials
 from docker.errors import APIError
 from docker.errors import ImageNotFound
 from jinja2 import Environment, FileSystemLoader
@@ -167,14 +167,6 @@ def retries(max_retry_count, exception_message_prefix, seconds_to_sleep=10):
 
 def service_login(service, tag=None):
     api_client = docker_api_client()
-
-    if vault_still_sealed():
-        for _ in retries(max_retry_count=5, 
-                         seconds_to_sleep=30, 
-                         exception_message_prefix="Waiting for Vault to unseal..."):
-            unseal_vault()
-            if check_mounts():
-                break
 
     if service == "dockerhub":
         auth_config = fetch_credentials("dockerhub")

@@ -1,4 +1,7 @@
-.PHONY: build-protobufs remove-volumes dist build-image
+.PHONY: build-protobufs remove-volumes dist build-image create-secrets
+
+create-secrets:
+	aws --profile devs secretsmanager create-secret --name m1l0/creds --secret-string file://ssm.json
 
 build-protobufs:
 	python -m grpc_tools.protoc -I protobufs --python_out=gprotobufs --grpc_python_out=gprotobufs protobufs/image_builder.proto
@@ -16,9 +19,11 @@ run-tests:
 	python setup.py test
 
 check-service:
+	docker run --rm --network m1l0net fullstorydev/grpcurl:latest --plaintext builder:50051 describe
+
 	docker run --rm --network m1l0net fullstorydev/grpcurl:latest --plaintext builder:50051 list
 
-	docker run --rm --network m1l0net fullstorydev/grpcurl:latest --plaintext -d '{"service": ""}' builder:50051 grpc.health.v1.Health/Check
+	docker run --rm --network m1l0net fullstorydev/grpcurl:latest --plaintext  builder:50051 grpc.health.v1.Health/Check
 
 	docker run --rm --network m1l0net fullstorydev/grpcurl:latest --plaintext -d '{"service": "grpc.m1l0_services.imagebuilder.ImageBuilder"}' builder:50051 grpc.health.v1.Health/Check
 

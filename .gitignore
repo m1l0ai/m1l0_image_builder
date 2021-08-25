@@ -143,5 +143,4 @@ test*.py
 .env*
 ISSUES
 NOTES.md
-KANIKO.md
-*config.json
+*.json

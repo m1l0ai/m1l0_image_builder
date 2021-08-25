@@ -68,7 +68,6 @@ def seal_vault():
     else:
         return True
 
-
 def get_role_id(rolename):
     """
     Gets the role id of specific rolename
@@ -121,30 +120,30 @@ def fetch_credentials(service):
     """
     Wrapper function to call get_secret but only return subset of creds
     """
-    rolename = os.environ.get("VAULT_APPROLE")
-    secretname = os.environ.get("VAULT_SECRET")
+    # rolename = os.environ.get("VAULT_APPROLE")
+    # secretname = os.environ.get("VAULT_SECRET")
 
-    role_id = get_role_id(rolename)
-    secret_id = create_role_secret(rolename)
-    token = approle_login(role_id, secret_id)
-    creds = get_secret(secretname, token)
+    # role_id = get_role_id(rolename)
+    # secret_id = create_role_secret(rolename)
+    # token = approle_login(role_id, secret_id)
+    # creds = get_secret(secretname, token)
 
     auth_config = dict()
     if service == "dockerhub":
         auth_config = {
-            "username": creds.get("dockerhub_user"),
-            "password": creds.get("dockerhub_token")
+            "username": creds.get("DOCKERHUB_USER"),
+            "password": creds.get("DOCKERHUB_TOKEN")
         }
     elif service == "ecr":
         auth_config = {
-            "profile": creds.get("aws_profile"), 
-            "region": creds.get("aws_region"),
-            "access_key": creds.get("aws_access_key"),
-            "secret_access_key": creds.get("aws_secret_key")
+            "profile": creds.get("AWS_PROFILE"), 
+            "region": creds.get("AWS_REGION"),
+            "access_key": creds.get("AWS_ACCESS_KEY"),
+            "secret_access_key": creds.get("AWS_SECRET_KEY")
         }
     elif service == "github":
         auth_config = {
-            "token": creds.get("github_token")
+            "token": creds.get("GITHUB_TOKEN")
         }
 
     return auth_config

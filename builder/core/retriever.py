@@ -8,8 +8,7 @@ from pathlib import Path
 import traceback
 import tarfile
 from builder.authentication.authenticate import session_client
-from builder.authentication.vaultclient import fetch_credentials, unseal_vault
-
+from builder.authentication.ssm import fetch_credentials
 
 class GetSourceFiles:
     """
@@ -50,7 +49,6 @@ class GetSourceFiles:
                 print(error_msg)
         elif parsed_url.scheme == "s3":
             # Get token
-            unseal_vault()
             auth_config = fetch_credentials("ecr")
             s3_client = session_client(auth_config).client("s3")
             
@@ -67,7 +65,6 @@ class GetSourceFiles:
             os.remove(local_target)
         elif ".git" in parsed_url.path:
             # Get token
-            unseal_vault()
             auth_config = fetch_credentials("github")
             # Login to github first using token
             github_client = Github(auth_config["token"])
