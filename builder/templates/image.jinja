@@ -2,6 +2,10 @@ ARG BUILDER={{ builder }}
 
 FROM ${BUILDER}
 
+{% for k, v in framework_labels.items() -%}
+LABEL "{{ k|lower }}"="{{ v }}"
+{% endfor %}
+
 {%- if tags %}
 {% for k, v in tags.items() -%}
 LABEL "{{ k|lower }}"="{{ v }}"

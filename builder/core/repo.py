@@ -38,7 +38,7 @@ def get_build_image(config):
     if "baseimage" in config:
         builder_image = config["baseimage"]
     else:
-        builder_image = "{}/{}:{}-py{}-{}".format("m1l0", config['framework'], config['version'], config['pyversion'], config['resource'])
+        builder_image = "m1l0/{}:{}-py{}-{}".format(config['framework'], config['version'], config['pyversion'], config['resource'])
 
     return builder_image
 
@@ -55,6 +55,7 @@ def create_dockerfile(config, tmpl_dir, code_dir, dockerfile_path=None, has_requ
     working_dir = '/opt/model/jobs'
 
     tags = config["tags"]
+    framework_labels = config["framework_labels"]
 
     files_copy_cmd = "COPY {} {}".format(code_dir, project_dir)
 
@@ -84,7 +85,7 @@ def create_dockerfile(config, tmpl_dir, code_dir, dockerfile_path=None, has_requ
     # Set dockerfile from image on config object
     config["dockerfile_from_image"] = builder_image
 
-    dockerfile_str = template.render(builder=builder_image, files=files_copy_cmd, requirements=reqs_cmd, entrypoint=entrypoint, tags=tags)
+    dockerfile_str = template.render(builder=builder_image, files=files_copy_cmd, requirements=reqs_cmd, entrypoint=entrypoint, tags=tags, framework_labels=framework_labels)
 
     if save_file:
         dockerfile = os.path.join(dockerfile_path, "Dockerfile")
@@ -237,51 +238,47 @@ def build_docker_image(tar_archive, tag, labels, config, encoding="utf-8"):
     except APIError as e:
         module_logger.error("Docker API returns an error: {}".format(e))
 
-def push_docker_image(image, service, repository=None):
+def push_docker_image(service, repository, revision):
     """
     Pushes built image
 
-    Note for dockerhub the repository must be create first and passed in here
+    Note the repository must be created first
 
-    For ecr, we can push using a url type syntax ....
-
-    We also need to reauth for each login type even though the config.json file is mounted here...
+    For ecr, we push using a url type syntax ....
 
     Inputs:
-    image => "cheeproject/mnist:1"
     service => One of "docker" or "ecr" 
-    auth_config => dict of username, password
-    respository => Needed for dockerhub
+    respository => Repository URL e.g. "myproject"
+    revision => Repository tag e.g. "latest"
     """
     api_client = docker_api_client()
 
     try:
-        if service == "dockerhub":
-            if not repository:
-                raise RuntimeError("Repository must be specified for dockerhub")
+        if not repository:
+            raise RuntimeError("Repository must be specified")
 
+        if service == "dockerhub":
             status, auth_config = service_login("dockerhub")
             if status != "Login Succeeded":
                 raise RuntimeError("Unable to login to Dockerhub service. Push failed.")
 
-            tag = image.split(":")[-1]
             repo_name = repository
-            api_client.tag(image, repository, tag)
         elif service == "ecr":
             # NOTE: ECR requires reauth hence logging in again...
             status, ecr_url, auth_config = service_login("ecr")
             if status != "Login Succeeded":
                 raise RuntimeError("Unable to login to ECR service. Push failed.")
 
-            repo_name, tag = image.split(":")
-            repo_name = '{}/{}'.format(ecr_url.replace('https://', ''), repo_name)
+            repo_name = '{}/{}'.format(ecr_url.replace('https://', ''), repository)
 
-            module_logger.info("Tagging repo {} with {} ...".format(repo_name, tag))
-            api_client.tag(image, repo_name, tag)
+            module_logger.info("Tagging repo {} with {} ...".format(repo_name, revision))
 
-        module_logger.info("Pushing to remote repo: {}:{} ...".format(repo_name, tag))
+            image = "{}:{}".format(repository, revision)
+            api_client.tag(image, repo_name, revision)
 
-        logs = api_client.push(repo_name, auth_config=auth_config, tag=tag, stream=True, decode=True)
+        module_logger.info("Pushing to remote repo: {}:{} ...".format(repo_name, revision))
+
+        logs = api_client.push(repo_name, auth_config=auth_config, tag=revision, stream=True, decode=True)
 
         for log in logs:
             res = process_build_log(log)
@@ -291,7 +288,7 @@ def push_docker_image(image, service, repository=None):
                 module_logger.info(res)
                 yield res
 
-        full_repo_name = "{}:{}".format(repo_name, tag)
+        full_repo_name = "{}:{}".format(repo_name, revision)
 
         yield "repository: {}".format(full_repo_name)
     except ImageNotFound as e:

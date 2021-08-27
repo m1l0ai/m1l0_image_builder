@@ -20,6 +20,10 @@ class ImageBuilder:
         self.code_path = request.id
 
     def build(self):
+        framework_labels = {}
+        framework_labels["m1l0.namespace"] = self.request.namespace
+        framework_labels["m1l0.name"] = self.request.name
+
         labels = {}
         if self.request.tags:
             for tag in self.request.tags:
@@ -39,6 +43,7 @@ class ImageBuilder:
             "resource": self.request.resource,
             "entry": self.request.entry,
             "tags": labels,
+            "framework_labels": framework_labels,
             "revision": self.request.revision,
             "service": self.request.service,
             "repository": self.request.repository
@@ -50,7 +55,8 @@ class ImageBuilder:
 
         build_context = prepare_archive(dockerfile, self.code_copy_path)
 
-        tag = "{}/{}:{}".format(self.config["namespace"], self.config["name"], self.config["revision"])
+        # tag = "{}/{}:{}".format(self.config["namespace"], self.config["name"], self.config["revision"])
+        tag = "{}:{}".format(self.config.get("repository"), self.config.get("revision"))
 
         for log in build_docker_image(build_context, tag, labels, self.config):
             if "imagename:" in log:
@@ -60,9 +66,7 @@ class ImageBuilder:
                 yield log
 
     def push(self):
-        tag = "{}/{}:{}".format(self.config.get("namespace"), self.config.get("name"), self.config.get("revision"))
-
-        for log in push_docker_image(tag, self.config.get("service"), self.config.get("repository")):
+        for log in push_docker_image(self.config.get("service"), self.config.get("repository"), self.config.get("revision")):
             if "repository:" in log:
                 self.repository = log
                 continue
