@@ -144,3 +144,4 @@ test*.py
 ISSUES
 NOTES.md
 *.json
+certs/

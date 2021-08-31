@@ -1,17 +1,18 @@
-from m1l0_services.imagebuilder import image_builder_pb2_grpc
-from m1l0_services.imagebuilder import image_builder_pb2
-from m1l0_services.imagebuilder.image_builder_pb2 import BuildResponse, BuildLog
 from builder.core.retriever import GetSourceFiles
 from builder.core.imagebuilder import ImageBuilder
-from concurrent import futures
-import sys
 import grpc
 from grpc_health.v1 import health
 from grpc_health.v1 import health_pb2
 from grpc_health.v1 import health_pb2_grpc
 from grpc_reflection.v1alpha import reflection
+from m1l0_services.imagebuilder import image_builder_pb2_grpc
+from m1l0_services.imagebuilder import image_builder_pb2
+from m1l0_services.imagebuilder.image_builder_pb2 import BuildResponse, BuildLog
+from concurrent import futures
+import sys
 from signal import signal, SIGTERM, SIGINT
 import logging
+import os
 
 
 logging.basicConfig(level=logging.INFO)
@@ -42,14 +43,31 @@ class ImageBuilderService(image_builder_pb2_grpc.ImageBuilderServicer):
 
         builder.cleanup()
 
-def serve(host, port):
+def serve(host, port, secure=False):
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
 
     image_builder_pb2_grpc.add_ImageBuilderServicer_to_server(ImageBuilderService(), server)
 
     listen_address = "{}:{}".format(host, port)
 
-    server.add_insecure_port(listen_address)
+    if secure:
+        cert_path = os.path.join(os.getcwd(), "certs")
+        # with open(os.path.join(cert_path, "server.key"), "rb") as f:
+        #     server_key = f.read()
+
+        # with open(os.path.join(cert_path, "server.crt"), "rb") as f:
+        #     server_crt = f.read()
+
+        with open(os.path.join(cert_path, "server-key.pem"), "rb") as f:
+            server_key = f.read()
+
+        with open(os.path.join(cert_path, "server-cert.pem"), "rb") as f:
+            server_crt = f.read()
+
+        creds = grpc.ssl_server_credentials([(server_key, server_crt)],         require_client_auth=False)
+        server.add_secure_port(listen_address, creds)
+    else:
+        server.add_insecure_port(listen_address)
 
     def handle_sigterm(*_):
         module_logger.info("Received shutdown...")
