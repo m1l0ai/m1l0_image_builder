@@ -1,0 +1,15 @@
+aws secretsmanager create-secret --name my-private-key --secret-string "$(base64 private.pem)"
+
+
+aws secretsmanager get-secret-value --secret-id my-private-key --query 'SecretString' --output text | base64 -d > private.pem
+
+
+### Storing certs as binary format
+
+for ecs tasks we have to store it in above key-value format
+
+aws --profile devs secretsmanager create-secret --name "myprivatekey" --description "Private key file" --secret-binary fileb://./private.key
+
+
+
+aws --profile devs secretsmanager get-secret-value --secret-id myprivatekey --query 'SecretBinary' --output text | base64 --decode 

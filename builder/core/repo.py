@@ -57,6 +57,7 @@ def create_dockerfile(config, tmpl_dir, code_dir, dockerfile_path=None, has_requ
     tags = config["tags"]
     framework_labels = config["framework_labels"]
 
+    requirements_copy_cmd = f"COPY {code_dir}/requirements.txt {project_dir}/requirements.txt"
     files_copy_cmd = "COPY {} {}".format(code_dir, project_dir)
 
     # Set up entrypoint
@@ -85,7 +86,7 @@ def create_dockerfile(config, tmpl_dir, code_dir, dockerfile_path=None, has_requ
     # Set dockerfile from image on config object
     config["dockerfile_from_image"] = builder_image
 
-    dockerfile_str = template.render(builder=builder_image, files=files_copy_cmd, requirements=reqs_cmd, entrypoint=entrypoint, tags=tags, framework_labels=framework_labels)
+    dockerfile_str = template.render(builder=builder_image, files=files_copy_cmd, requirements=reqs_cmd, requirements_copy_cmd=requirements_copy_cmd, entrypoint=entrypoint, tags=tags, framework_labels=framework_labels, pyversion=config["pyversion"])
 
     if save_file:
         dockerfile = os.path.join(dockerfile_path, "Dockerfile")

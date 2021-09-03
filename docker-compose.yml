@@ -15,7 +15,9 @@ services:
     ports:
       - "50051:50051"
     volumes:
+      - "./certs:/certs:ro"
       - "~/.aws:/root/.aws:ro"
       - "m1l0-builder:/tmp:rw"
       - "/var/run/docker.sock:/var/run/docker.sock"
     env_file: .env
+    command: ["--secure"]

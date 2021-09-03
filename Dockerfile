@@ -61,9 +61,6 @@ COPY ./builder /builder
 COPY ./main.py /main.py
 
 COPY ./certs/server-cert.pem /certs/ca-cert.pem
-COPY ./certs/server-key.pem /certs/server-key.pem
-COPY ./certs/server-cert.pem /certs/server-cert.pem
-
 
 # Copy healthprobe
 COPY --from=builder /bin/grpc_health_probe /bin/grpc_health_probe
@@ -72,4 +69,4 @@ RUN chmod +x /bin/grpc_health_probe
 
 HEALTHCHECK --interval=10s --retries=3 CMD /bin/grpc_health_probe -addr=localhost:50051 -tls -tls-ca-cert=/certs/ca-cert.pem
 
-ENTRYPOINT ["python", "main.py", "--secure"]
+ENTRYPOINT ["python", "main.py"]

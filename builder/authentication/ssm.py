@@ -1,5 +1,6 @@
 import boto3
 from botocore.exceptions import ClientError
+import requests
 import os
 import base64
 import json
@@ -10,9 +11,25 @@ def fetch_credentials(service):
     Fetches the required creds from SSM service
     """
     secret_name = "m1l0/creds"
-    profile = os.environ.get("AWS_PROFILE")
-    region = os.environ.get("AWS_REGION")
-    session = boto3.session.Session(profile_name=profile, region_name=region)
+
+    aws_container_credentials_uri = os.environ.get("AWS_CONTAINER_CREDENTIALS_RELATIVE_URI")
+
+    if aws_container_credentials_uri:
+        keyurl = "http://169.254.170.2{}".format(aws_container_credentials_uri)
+
+        resp = requests.get(keyurl)
+        output = resp.json()
+        session = boto3.session.Session(
+            aws_access_key_id=output["AccessKeyId"],
+            aws_secret_access_key=output["SecretAccessKey"],
+            aws_session_token=output["Token"]
+        )
+    else:
+        profile = os.environ.get("AWS_PROFILE")
+        region = os.environ.get("AWS_REGION")
+        session = boto3.session.Session(profile_name=profile, region_name=region)
+    
+
     ssm_client = session.client("secretsmanager")
 
     try:

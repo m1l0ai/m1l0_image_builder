@@ -13,6 +13,7 @@ import sys
 from signal import signal, SIGTERM, SIGINT
 import logging
 import os
+import base64
 
 
 logging.basicConfig(level=logging.INFO)
@@ -43,7 +44,7 @@ class ImageBuilderService(image_builder_pb2_grpc.ImageBuilderServicer):
 
         builder.cleanup()
 
-def serve(host, port, secure=False):
+def serve(host, port, secure=False, local=False):
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
 
     image_builder_pb2_grpc.add_ImageBuilderServicer_to_server(ImageBuilderService(), server)
@@ -51,18 +52,25 @@ def serve(host, port, secure=False):
     listen_address = "{}:{}".format(host, port)
 
     if secure:
-        cert_path = os.path.join(os.getcwd(), "certs")
-        # with open(os.path.join(cert_path, "server.key"), "rb") as f:
-        #     server_key = f.read()
+        if os.environ.get("MODE") == "Local":
+            cert_path = os.path.join(os.getcwd(), "certs")
 
-        # with open(os.path.join(cert_path, "server.crt"), "rb") as f:
-        #     server_crt = f.read()
+            with open(os.path.join(cert_path, "server-key.pem"), "rb") as f:
+                server_key = f.read()
 
-        with open(os.path.join(cert_path, "server-key.pem"), "rb") as f:
-            server_key = f.read()
+            with open(os.path.join(cert_path, "server-cert.pem"), "rb") as f:
+                server_crt = f.read()
+        else:
+            # Check if ENV var set for the keys
+            # if so we base64 decode them 
+            b64server_key = os.environ.get("M1L0_BUILDER_KEY")
+            b64server_crt = os.environ.get("M1L0_BUILDER_CERT")
 
-        with open(os.path.join(cert_path, "server-cert.pem"), "rb") as f:
-            server_crt = f.read()
+            if not all([b64server_key, b64server_crt]):
+                raise RuntimeError("No private key and certificate found.")
+            else:
+                server_key = base64.b64decode(b64server_key)
+                server_crt = base64.b64decode(b64server_crt)
 
         creds = grpc.ssl_server_credentials([(server_key, server_crt)],         require_client_auth=False)
         server.add_secure_port(listen_address, creds)

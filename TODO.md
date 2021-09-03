@@ -44,3 +44,8 @@ https://aws.amazon.com/premiumsupport/knowledge-center/ecs-data-security-contain
 
 
 https://stackoverflow.com/questions/44077407/is-there-a-way-to-automatically-activate-a-virtualenv-as-a-docker-entrypoint
+
+
+* Local logging to Cloudwatch
+
+https://github.com/kislyuk/watchtower

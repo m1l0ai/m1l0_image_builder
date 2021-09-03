@@ -1,4 +1,15 @@
-.PHONY: build-protobufs remove-volumes dist build-image create-secrets certificates certificates2
+.PHONY: build-protobufs remove-volumes dist build-image create-secrets certificates certificates2 store-private-key setup teardown
+
+
+store-private-key:
+	@echo "Storing server private key on secrets manager..."
+
+	$(eval SECRET=$(shell base64 certs/server-key.pem))
+	aws --profile devs secretsmanager create-secret --name builder-private-key --secret-string "$(SECRET)"
+
+	$(eval SECRET=$(shell base64 certs/server-cert.pem))
+	aws --profile devs secretsmanager create-secret --name builder-private-cert --secret-string "$(SECRET)"
+
 
 create-secrets:
 	aws --profile devs secretsmanager create-secret --name m1l0/creds --secret-string file://ssm.json
@@ -8,6 +19,12 @@ build-protobufs:
 
 build-image:
 	docker build --force-rm -t m1l0/builder:latest -f Dockerfile .
+
+	aws --profile $(AWS_PROFILE) ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin $(ECR_REPO)
+
+	docker tag m1l0/builder:latest $(ECR_REPO)/m1l0/builder:latest
+
+	docker push $(ECR_REPO)/m1l0/builder:latest
 
 run-service:
 	python main.py
@@ -46,7 +63,7 @@ certificates:
 
 	openssl req -nodes -new -x509 -sha256 -days 1825 -config certificate.conf -extensions 'req_ext' -key certs/server.key -out certs/server.crt
 
-
+# NOTE: Important the subject field for the CA has to be different than the server and clients below else client will fail with TLS check issues
 certificates2:
 	rm -rf certs/*.pem
 
@@ -74,3 +91,13 @@ certificates2:
 
 	echo "Client's signed certificate"
 	openssl x509 -in certs/client-cert.pem -noout -text
+
+setup:
+	terraform -chdir=terraform init
+	terraform -chdir=terraform fmt
+	terraform -chdir=terraform validate
+	terraform -chdir=terraform plan -var-file=config.tfvars -out myplan
+	terraform -chdir=terraform apply myplan
+
+teardown:
+	terraform -chdir=terraform destroy -var-file=config.tfvars
