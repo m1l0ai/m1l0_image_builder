@@ -37,6 +37,7 @@ run-tests:
 
 # Disable TLS Verification due to self-signed certs
 # https://github.com/fullstorydev/grpcurl/issues/90
+# TODO: make builder a var so we can also pass in remote host for healthchecks...
 check-service:
 	docker run -v "${PWD}/certs":/tmp/certs --rm --network m1l0net fullstorydev/grpcurl:latest -cacert=/tmp/certs/ca-cert.pem builder:50051 describe
 

@@ -19,18 +19,18 @@ def fetch_credentials(service):
 
         resp = requests.get(keyurl)
         output = resp.json()
-        session = boto3.session.Session(
+
+        ssm_client = boto3.client(
+            "secretsmanager",
             aws_access_key_id=output["AccessKeyId"],
             aws_secret_access_key=output["SecretAccessKey"],
             aws_session_token=output["Token"]
         )
     else:
         profile = os.environ.get("AWS_PROFILE")
-        region = os.environ.get("AWS_REGION")
+        region = os.environ.get("AWS_DEFAULT_REGION")
         session = boto3.session.Session(profile_name=profile, region_name=region)
-    
-
-    ssm_client = session.client("secretsmanager")
+        ssm_client = session.client("secretsmanager")
 
     try:
         get_secret_value_response = ssm_client.get_secret_value(
@@ -48,10 +48,17 @@ def fetch_credentials(service):
             "password": creds.get("DOCKERHUB_TOKEN")
         }
     elif service == "ecr":
-        auth_config = {
-            "profile": profile, 
-            "region": region
-        }
+        if aws_container_credentials_uri:
+            auth_config = {
+              "AccessKeyId": output["AccessKeyId"],
+              "SecretAccessKey": output["SecretAccessKey"],
+              "Token": output["Token"]
+            }
+        else:
+            auth_config = {
+                "profile": profile, 
+                "region": region
+            }
     elif service == "github":
         auth_config = {
             "token": creds.get("GITHUB_TOKEN")

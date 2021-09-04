@@ -155,11 +155,11 @@ resource "aws_cloudwatch_log_group" "main" {
 }
 
 # create and upload self-sign certs
-resource "aws_acm_certificate" "builder_self_signed" {
-  private_key       = file("../certs/server-key.pem")
-  certificate_body  = file("../certs/server-cert.pem")
-  certificate_chain = file("../certs/ca-cert.pem")
-}
+#resource "aws_acm_certificate" "builder_self_signed" {
+#  private_key       = file("../certs/server-key.pem")
+#  certificate_body  = file("../certs/server-cert.pem")
+#  certificate_chain = file("../certs/ca-cert.pem")
+#}
 
 
 resource "aws_iam_policy" "rexraypolicy" {
@@ -327,7 +327,7 @@ module "alb" {
   source  = "terraform-aws-modules/alb/aws"
   version = "~> 6.0"
 
-  name = "route-guide"
+  name = "builder"
 
   load_balancer_type = "application"
 
@@ -357,9 +357,10 @@ module "alb" {
 
   https_listeners = [
     {
-      port               = 50051
-      protocol           = "HTTPS"
-      certificate_arn    = aws_acm_certificate.builder_self_signed.arn
+      port     = 50051
+      protocol = "HTTPS"
+      #certificate_arn    = aws_acm_certificate.builder_self_signed.arn
+      certificate_arn    = "arn:aws:acm:us-east-1:035663780217:certificate/253074f6-6863-4a6c-b1d6-bce5580d301f"
       target_group_index = 0
     }
   ]
@@ -400,6 +401,20 @@ resource "aws_ecs_task_definition" "grpc_service" {
   task_role_arn            = aws_iam_role.ecs_task_role.arn
   execution_role_arn       = aws_iam_role.ecs_task_role.arn
 
+  volume {
+    name      = "dockersocket"
+    host_path = "/var/run/docker.sock"
+  }
+
+  volume {
+    name = "workdir"
+    docker_volume_configuration = {
+      autoprovision = true
+      driver = "local"
+      scope = "shared"
+    }
+  }
+
   container_definitions = jsonencode([
     {
 
@@ -412,6 +427,12 @@ resource "aws_ecs_task_definition" "grpc_service" {
           "containerPort" : 50051,
           "hostPort" : 0,
           "protocol" : "tcp"
+        }
+      ],
+      "environment" : [
+        {
+          "name" : "AWS_DEFAULT_REGION",
+          "value" : "${var.aws_region}"
         }
       ],
       "secrets" : [
@@ -443,7 +464,18 @@ resource "aws_ecs_task_definition" "grpc_service" {
           "awslogs-group" : aws_cloudwatch_log_group.main.name,
           "awslogs-stream-prefix" : "ecs"
         }
-      }
+      },
+      "mountPoints" : [
+        {
+          "sourceVolume" : "dockersocket",
+          "containerPath" : "/var/run/docker.sock",
+          "readOnly" : true
+        },
+        {
+          "sourceVolume": "workdir",
+          "containerPath": "/tmp"
+        }
+      ]
     }
   ])
 }
