@@ -298,3 +298,23 @@ def push_docker_image(service, repository, revision):
         module_logger.error("Docker API returns an error: {}".format(e))
     except RuntimeError as e:
         module_logger.error("Error with pushing image: {}".format(e))
+
+def remove_image(repository):
+    """
+    Deletes the given image repo locally
+    """
+    api_client = docker_api_client()
+
+    try:
+        api_client.remove_image(repository, force=True)
+        if "ecr" in repository:
+            # need to remove the base part of the image
+            # as ecr creates two images
+            rsp = repository.split("/")
+            api_client.remove_image("/".join(rsp[1:]), force=True)
+    except ImageNotFound as e:
+        module_logger.error("Error with removing image: {}".format(e))
+    except APIError as e:
+        module_logger.error("Docker API returns an error: {}".format(e))
+    except RuntimeError as e:
+        module_logger.error("Error with removing image: {}".format(e))

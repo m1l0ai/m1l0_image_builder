@@ -1,5 +1,5 @@
 # Core classes for building images
-from .repo import create_dockerfile, prepare_archive, build_docker_image, push_docker_image
+from .repo import create_dockerfile, prepare_archive, build_docker_image, push_docker_image, remove_image
 from github import Github
 import tempfile
 import os
@@ -75,3 +75,6 @@ class ImageBuilder:
 
     def cleanup(self):
         shutil.rmtree(self.code_copy_path)
+        # Delete created image self.repository else it will clog up disk
+        if os.environ.get("MODE") != "Local":
+            remove_image(self.repository.lstrip("repository: "))
