@@ -1,5 +1,9 @@
 ### TODO:
 
+* Refine task and task execution role
+
+  https://blog.ruanbekker.com/blog/2021/07/31/difference-with-ecs-task-and-execution-iam-roles-on-aws/
+
 * Healthcheck for grpc service
 
   https://stackoverflow.com/questions/56984565/python-grpc-health-check

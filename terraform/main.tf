@@ -155,11 +155,11 @@ resource "aws_cloudwatch_log_group" "main" {
 }
 
 # create and upload self-sign certs
-#resource "aws_acm_certificate" "builder_self_signed" {
-#  private_key       = file("../certs/server-key.pem")
-#  certificate_body  = file("../certs/server-cert.pem")
-#  certificate_chain = file("../certs/ca-cert.pem")
-#}
+resource "aws_acm_certificate" "builder_self_signed" {
+  private_key       = file("../certs/server-key.pem")
+  certificate_body  = file("../certs/server-cert.pem")
+  certificate_chain = file("../certs/ca-cert.pem")
+}
 
 
 resource "aws_iam_policy" "rexraypolicy" {
@@ -263,6 +263,37 @@ resource "aws_iam_role_policy_attachment" "task_role_attach_ecs_policy" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
+# Create broader set of ECR permissions to build/upload images to ECR
+resource "aws_iam_policy" "task_role_ecr_policy" {
+  name        = "${var.grpc_service_name}-ecrPolicy"
+  description = "Policy for allowing ECR image builds"
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "ecr:GetAuthorizationToken",
+          "ecr:BatchGetImage",
+          "ecr:InitiateLayerUpload",
+          "ecr:UploadLayerPart",
+          "ecr:CompleteLayerUpload",
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:PutImage"
+        ],
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "task_role_attach_ecr_policy" {
+  role       = aws_iam_role.ecs_task_role.name
+  policy_arn = aws_iam_policy.task_role_ecr_policy.arn
+}
+
 
 resource "aws_iam_role_policy_attachment" "task_role_attach_cloudwatch_policy" {
   role       = aws_iam_role.ecs_task_role.name
@@ -357,10 +388,10 @@ module "alb" {
 
   https_listeners = [
     {
-      port     = 50051
-      protocol = "HTTPS"
-      #certificate_arn    = aws_acm_certificate.builder_self_signed.arn
-      certificate_arn    = "arn:aws:acm:us-east-1:035663780217:certificate/253074f6-6863-4a6c-b1d6-bce5580d301f"
+      port            = 50051
+      protocol        = "HTTPS"
+      certificate_arn = aws_acm_certificate.builder_self_signed.arn
+      #certificate_arn    = "arn:aws:acm:us-east-1:035663780217:certificate/253074f6-6863-4a6c-b1d6-bce5580d301f"
       target_group_index = 0
     }
   ]
@@ -408,10 +439,10 @@ resource "aws_ecs_task_definition" "grpc_service" {
 
   volume {
     name = "workdir"
-    docker_volume_configuration = {
+    docker_volume_configuration {
       autoprovision = true
-      driver = "local"
-      scope = "shared"
+      driver        = "local"
+      scope         = "shared"
     }
   }
 
@@ -472,8 +503,9 @@ resource "aws_ecs_task_definition" "grpc_service" {
           "readOnly" : true
         },
         {
-          "sourceVolume": "workdir",
-          "containerPath": "/tmp"
+          "sourceVolume" : "workdir",
+          "containerPath" : "/tmp/code",
+          "readOnly" : false
         }
       ]
     }

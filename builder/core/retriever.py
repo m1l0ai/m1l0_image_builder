@@ -54,9 +54,10 @@ class GetSourceFiles:
 
 
             # Downloads from s3 bucket into local tmp folder..
+            bucket = parsed_url.netloc
             s3_target = parsed_url.path.lstrip("/")
             local_target = f"{code_copy_path}.tar.gz"
-            s3_client.download_file("m1l0training", s3_target, local_target)
+            s3_client.download_file(bucket, s3_target, local_target)
 
             with tarfile.open(local_target) as t:
                 t.extractall(code_copy_path + "_tmp")
