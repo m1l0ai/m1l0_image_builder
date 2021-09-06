@@ -14,7 +14,9 @@ provider "aws" {
 
 
 locals {
-  account_id = data.aws_caller_identity.current.account_id
+  account_id  = data.aws_caller_identity.current.account_id
+  zone_name   = "m1l0.xyz"
+  domain_name = "builder.m1l0.xyz"
 }
 
 module "vpc" {
@@ -388,13 +390,25 @@ module "alb" {
 
   https_listeners = [
     {
-      port            = 50051
-      protocol        = "HTTPS"
-      certificate_arn = aws_acm_certificate.builder_self_signed.arn
-      #certificate_arn    = "arn:aws:acm:us-east-1:035663780217:certificate/253074f6-6863-4a6c-b1d6-bce5580d301f"
+      port               = 50051
+      protocol           = "HTTPS"
+      certificate_arn    = aws_acm_certificate.builder_self_signed.arn
       target_group_index = 0
     }
   ]
+}
+
+# Adds Alias Record to Hosted zone of m1l0.xyz
+resource "aws_route53_record" "builder" {
+  zone_id = data.aws_route53_zone.this.id
+  name    = local.domain_name
+  type    = "A"
+
+  alias {
+    name                   = module.alb.lb_dns_name
+    zone_id                = module.alb.lb_zone_id
+    evaluate_target_health = true
+  }
 }
 
 

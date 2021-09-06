@@ -45,3 +45,7 @@ data "template_cloudinit_config" "config" {
     content      = data.template_file.init.rendered
   }
 }
+
+data "aws_route53_zone" "this" {
+  name = local.zone_name
+}
