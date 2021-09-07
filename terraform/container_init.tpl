@@ -17,7 +17,6 @@ sudo systemctl daemon-reload
 exec 2>>/var/log/ecs-agent-reload.log
 set -x
 until curl -s http://localhost:51678/v1/metadata; do sleep 1; done
-docker plugin install rexray/ebs REXRAY_PREEMPT=true EBS_REGION=${region } --grant-all-permissions
 sudo systemctl restart docker
 sudo systemctl restart ecs
 

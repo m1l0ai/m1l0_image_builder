@@ -10,27 +10,16 @@ def fetch_credentials(service):
     """
     Fetches the required creds from SSM service
     """
-    secret_name = "m1l0/creds"
+    secret_name = os.environ.get("SECRET_NAME")
+    region = os.environ.get("AWS_DEFAULT_REGION")
 
     aws_container_credentials_uri = os.environ.get("AWS_CONTAINER_CREDENTIALS_RELATIVE_URI")
 
     if aws_container_credentials_uri:
-        keyurl = "http://169.254.170.2{}".format(aws_container_credentials_uri)
-
-        resp = requests.get(keyurl)
-        output = resp.json()
-
-        ssm_client = boto3.client(
-            "secretsmanager",
-            aws_access_key_id=output["AccessKeyId"],
-            aws_secret_access_key=output["SecretAccessKey"],
-            aws_session_token=output["Token"]
-        )
+        ssm_client = boto3.session.Session(region_name=region).client("secretsmanager")
     else:
         profile = os.environ.get("AWS_PROFILE")
-        region = os.environ.get("AWS_DEFAULT_REGION")
-        session = boto3.session.Session(profile_name=profile, region_name=region)
-        ssm_client = session.client("secretsmanager")
+        ssm_client = boto3.session.Session(profile_name=profile, region_name=region).client("secretsmanager")
 
     try:
         get_secret_value_response = ssm_client.get_secret_value(
@@ -50,14 +39,12 @@ def fetch_credentials(service):
     elif service == "ecr":
         if aws_container_credentials_uri:
             auth_config = {
-              "AccessKeyId": output["AccessKeyId"],
-              "SecretAccessKey": output["SecretAccessKey"],
-              "Token": output["Token"]
+                "region_name": region
             }
         else:
             auth_config = {
-                "profile": profile, 
-                "region": region
+                "profile_name": profile, 
+                "region_name": region
             }
     elif service == "github":
         auth_config = {

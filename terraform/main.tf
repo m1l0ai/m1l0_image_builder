@@ -234,11 +234,11 @@ resource "aws_iam_instance_profile" "ecs_instance_profile" {
   role = aws_iam_role.ecs_instance_role.name
 }
 
-# create task execution role
+# create ecs agent task execution role
 resource "aws_iam_role" "ecs_task_role" {
   name = "${var.grpc_service_name}-ecsTaskRole"
 
-  description = "IAM Role for running ECS Tasks"
+  description = "IAM Role for running ECS Agent"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
@@ -246,7 +246,7 @@ resource "aws_iam_role" "ecs_task_role" {
       {
         Effect = "Allow",
         Principal = {
-          AWS     = data.aws_caller_identity.current.arn,
+          #AWS     = data.aws_caller_identity.current.arn,
           Service = "ecs-tasks.amazonaws.com"
         },
         Action = "sts:AssumeRole"
@@ -255,18 +255,64 @@ resource "aws_iam_role" "ecs_task_role" {
   })
 }
 
-resource "aws_iam_role_policy_attachment" "task_role_attach_s3" {
-  role       = aws_iam_role.ecs_task_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonS3FullAccess"
-}
-
 resource "aws_iam_role_policy_attachment" "task_role_attach_ecs_policy" {
   role       = aws_iam_role.ecs_task_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
-# Create broader set of ECR permissions to build/upload images to ECR
-resource "aws_iam_policy" "task_role_ecr_policy" {
+# Allows ECS agent to read secrets from KMS, SSM
+resource "aws_iam_policy" "kms_policy" {
+  name        = "${var.grpc_service_name}-ecsKMSPolicy"
+  description = "Policy for handling secrets in ECS"
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "ssm:GetParameters",
+          "secretsmanager:GetSecretValue",
+          "kms:Decrypt",
+          "kms:GetPublicKey",
+          "kms:GenerateDataKey",
+          "kms:DescribeKey"
+        ],
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "task_role_attach_kms" {
+  role       = aws_iam_role.ecs_task_role.name
+  policy_arn = aws_iam_policy.kms_policy.arn
+}
+
+
+## Service ECS Task role
+resource "aws_iam_role" "service_ecs_task_role" {
+  name = "${var.grpc_service_name}-ecsServiceTaskRole"
+
+  description = "IAM Role for ECS Service"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Principal = {
+          Service = "ecs-tasks.amazonaws.com"
+        },
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
+}
+
+# Create permissions for ECS Task role assumed by Service
+# Includes: ECR, S3, Cloudwatch Logs
+resource "aws_iam_policy" "service_ecs_task_role_policy" {
   name        = "${var.grpc_service_name}-ecrPolicy"
   description = "Policy for allowing ECR image builds"
 
@@ -286,36 +332,29 @@ resource "aws_iam_policy" "task_role_ecr_policy" {
           "ecr:PutImage"
         ],
         Resource = "*"
-      }
-    ]
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "task_role_attach_ecr_policy" {
-  role       = aws_iam_role.ecs_task_role.name
-  policy_arn = aws_iam_policy.task_role_ecr_policy.arn
-}
-
-
-resource "aws_iam_role_policy_attachment" "task_role_attach_cloudwatch_policy" {
-  role       = aws_iam_role.ecs_task_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AWSOpsWorksCloudWatchLogs"
-}
-
-# Allows ECS containers to read secrets from KMS..
-resource "aws_iam_policy" "kms_policy" {
-  name        = "${var.grpc_service_name}-ecsKMSPolicy"
-  description = "Policy for handling secrets in ECS"
-
-  policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
+      },
+      {
+        Effect   = "Allow",
+        Action   = "s3:*"
+        Resource = "*"
+      },
       {
         Effect = "Allow",
         Action = [
-          "ssm:GetParameters",
-          "secretsmanager:GetSecretValue",
-          "kms:Decrypt"
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:DescribeLogGroups",
+          "logs:DescribeLogStreams",
+          "logs:PutLogEvents",
+          "logs:GetLogEvents",
+          "logs:FilterLogEvents"
+        ],
+        Resource = "*"
+      },
+      {
+        Effect = "Allow",
+        Action = [
+          "secretsmanager:GetSecretValue"
         ],
         Resource = "*"
       }
@@ -323,10 +362,9 @@ resource "aws_iam_policy" "kms_policy" {
   })
 }
 
-
-resource "aws_iam_role_policy_attachment" "task_role_attach_kms" {
-  role       = aws_iam_role.ecs_task_role.name
-  policy_arn = aws_iam_policy.kms_policy.arn
+resource "aws_iam_role_policy_attachment" "service_ecs_task_role" {
+  role       = aws_iam_role.service_ecs_task_role.name
+  policy_arn = aws_iam_policy.service_ecs_task_role_policy.arn
 }
 
 
@@ -443,7 +481,7 @@ resource "aws_ecs_task_definition" "grpc_service" {
   requires_compatibilities = ["EC2"]
   cpu                      = 256
   memory                   = 512
-  task_role_arn            = aws_iam_role.ecs_task_role.arn
+  task_role_arn            = aws_iam_role.service_ecs_task_role.arn
   execution_role_arn       = aws_iam_role.ecs_task_role.arn
 
   volume {
@@ -478,6 +516,10 @@ resource "aws_ecs_task_definition" "grpc_service" {
         {
           "name" : "AWS_DEFAULT_REGION",
           "value" : "${var.aws_region}"
+        },
+        {
+          "name": "SECRET_NAME",
+          "value": "${var.service_secret_name}"
         }
       ],
       "secrets" : [
@@ -488,18 +530,6 @@ resource "aws_ecs_task_definition" "grpc_service" {
         {
           "name" : "M1L0_BUILDER_CERT",
           "valueFrom" : aws_secretsmanager_secret_version.builder_crt.arn
-        },
-        {
-          "name" : "DOCKERHUB_USER",
-          "valueFrom" : "arn:aws:secretsmanager:us-east-1:035663780217:secret:m1l0/creds-DqqNDx:DOCKERHUB_USER::"
-        },
-        {
-          "name" : "DOCKERHUB_TOKEN",
-          "valueFrom" : "arn:aws:secretsmanager:us-east-1:035663780217:secret:m1l0/creds-DqqNDx:DOCKERHUB_TOKEN::"
-        },
-        {
-          "name" : "GITHUB_TOKEN",
-          "valueFrom" : "arn:aws:secretsmanager:us-east-1:035663780217:secret:m1l0/creds-DqqNDx:GITHUB_TOKEN::"
         }
       ],
       "logConfiguration" : {

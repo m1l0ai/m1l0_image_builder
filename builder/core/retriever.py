@@ -7,7 +7,7 @@ import pkg_resources
 from pathlib import Path
 import traceback
 import tarfile
-from builder.authentication.authenticate import boto3_client
+from builder.authentication.authenticate import session_client
 from builder.authentication.ssm import fetch_credentials
 
 class GetSourceFiles:
@@ -50,8 +50,7 @@ class GetSourceFiles:
         elif parsed_url.scheme == "s3":
             # Get token
             auth_config = fetch_credentials("ecr")
-            s3_client = boto3_client("s3", auth_config)
-
+            s3_client = session_client("s3", auth_config)
 
             # Downloads from s3 bucket into local tmp folder..
             bucket = parsed_url.netloc
