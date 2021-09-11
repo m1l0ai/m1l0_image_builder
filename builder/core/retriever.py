@@ -18,7 +18,7 @@ class GetSourceFiles:
         self.request = request
 
     def call(self):
-        parsed_url = urlparse(self.request.source)
+        parsed_url = urlparse(self.request.config.source)
         ignores = []
 
         if self.request.ignores:

@@ -61,7 +61,7 @@ def test_docker():
     client = docker.from_env()
 
     # create initial container to bind volume to
-    data_dir = '/tmp'
+    data_dir = '/tmp/code'
 
     kwargs = {
         'name': 'datavol-attached',
@@ -74,8 +74,8 @@ def test_docker():
 
     datavol_attached = client.containers.create(
         "ubuntu:18.04",
-        # command="mkdir -p /tmp/code/mytestdata",
-        # command="tail -f /dev/null",
+        #command="mkdir -p /tmp/code",
+        #command="tail -f /dev/null",
         **kwargs
     )
 

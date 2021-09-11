@@ -20,37 +20,53 @@ class ImageBuilder:
         self.code_path = request.id
 
     def build(self):
+        self.config = {
+            "id": self.request.id,
+            "namespace": self.request.config.namespace,
+            "name": self.request.config.name,
+            "framework": self.request.config.framework,
+            "version": self.request.config.version,
+            "pyversion": self.request.config.pyversion,
+            "resource": self.request.config.resource,
+            "entry": self.request.config.entry,
+            # "tags": labels,
+            # "framework_labels": framework_labels,
+            "revision": self.request.config.revision,
+            "service": self.request.config.service,
+            "repository": self.request.config.repository,
+            "dockerfile": self.request.config.dockerfile
+        }
+
         framework_labels = {}
-        framework_labels["m1l0.namespace"] = self.request.namespace
-        framework_labels["m1l0.name"] = self.request.name
+        framework_labels["m1l0.namespace"] = self.request.config.namespace
+        framework_labels["m1l0.name"] = self.request.config.name
 
         labels = {}
         if self.request.tags:
             for tag in self.request.tags:
                 labels[tag.name] = tag.value
 
+        self.config["tags"] = labels
+        self.config["framework_labels"] = framework_labels
+
         has_requirements = False
         files_list = os.listdir(self.code_copy_path)
         if "requirements.txt" in files_list:
             has_requirements = True
 
-        self.config = {
-            "id": self.request.id,
-            "namespace": self.request.namespace,
-            "name": self.request.name,
-            "framework": self.request.framework,
-            "version": self.request.version,
-            "pyversion": self.request.pyversion,
-            "resource": self.request.resource,
-            "entry": self.request.entry,
-            "tags": labels,
-            "framework_labels": framework_labels,
-            "revision": self.request.revision,
-            "service": self.request.service,
-            "repository": self.request.repository
-        }
 
         tmpl_dir = os.path.join(Path(__file__).resolve().cwd(), "builder", "templates")
+
+        # if dockerfile exists, use it
+        # else build it dynamically
+        # if len(self.config["dockerfile"]) > 0:
+        #     df = os.path.join(self.code_copy_path, self.config["dockerfile"])
+        #     if os.path.exists(df):
+        #         print("Custom dockerfile exists!!!")
+        #         with open(df, "r") as f:
+        #             dockerfile = f.read()
+        # else:
+        #     dockerfile = create_dockerfile(self.config, tmpl_dir, self.code_path, dockerfile_path=None, has_requirements=has_requirements, save_file=False)
 
         dockerfile = create_dockerfile(self.config, tmpl_dir, self.code_path, dockerfile_path=None, has_requirements=has_requirements, save_file=False)
 
@@ -59,7 +75,7 @@ class ImageBuilder:
         # tag = "{}/{}:{}".format(self.config["namespace"], self.config["name"], self.config["revision"])
         tag = "{}:{}".format(self.config.get("repository"), self.config.get("revision"))
 
-        for log in build_docker_image(build_context, tag, labels, self.config):
+        for log in build_docker_image(build_context, tag, labels, self.config, self.code_copy_path):
             if "imagename:" in log:
                 self.imagename = log
                 continue

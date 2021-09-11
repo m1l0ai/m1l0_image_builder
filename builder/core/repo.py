@@ -257,8 +257,10 @@ def build_docker_image(tar_archive, tag, labels, config, encoding="utf-8"):
         yield "imagename: {}".format(tag)
     except ImageNotFound as e:
         module_logger.error("Error with building image: {}".format(e))
+        raise e
     except APIError as e:
         module_logger.error("Docker API returns an error: {}".format(e))
+        raise e
 
 def push_docker_image(service, repository, revision, job_id):
     """
@@ -326,10 +328,13 @@ def push_docker_image(service, repository, revision, job_id):
         yield "repository: {}".format(full_repo_name)
     except ImageNotFound as e:
         module_logger.error("Error with pushing image: {}".format(e))
+        raise e
     except APIError as e:
         module_logger.error("Docker API returns an error: {}".format(e))
+        raise e
     except RuntimeError as e:
         module_logger.error("Error with pushing image: {}".format(e))
+        raise e
 
 def remove_image(repository):
     """

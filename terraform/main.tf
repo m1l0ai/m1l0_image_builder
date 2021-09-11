@@ -527,8 +527,8 @@ resource "aws_ecs_task_definition" "grpc_service" {
           "value" : "${var.service_secret_name}"
         },
         {
-          "name": "JOB_LOG_GROUP",
-          "value": "/ecs/${var.grpc_service_name}-jobs"
+          "name" : "JOB_LOG_GROUP",
+          "value" : "/ecs/${var.grpc_service_name}/jobs"
         }
       ],
       "secrets" : [
