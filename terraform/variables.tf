@@ -92,6 +92,6 @@ variable "m1l0_keyname" {
 
 variable "service_secret_name" {
   description = "Name of SSM secret to use in ECS service"
-  type = string
-  default = ""
+  type        = string
+  default     = ""
 }

@@ -1,6 +1,6 @@
-from builder.service.imageservice import serve
 import click
-import logging
+from builder.service.imageservice import serve
+
 
 version = '1.0.0'
 @click.version_option(version)

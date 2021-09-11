@@ -2,6 +2,14 @@
 
 Builds a ML Project given some config such as directory path, root file etc
 
+To build image:
+```
+source .env.vars
+
+make build-image
+
+```
+
 
 To run server:
 ```

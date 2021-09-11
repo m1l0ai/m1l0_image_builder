@@ -35,6 +35,7 @@ class ImageBuilder:
             has_requirements = True
 
         self.config = {
+            "id": self.request.id,
             "namespace": self.request.namespace,
             "name": self.request.name,
             "framework": self.request.framework,
@@ -66,7 +67,7 @@ class ImageBuilder:
                 yield log
 
     def push(self):
-        for log in push_docker_image(self.config.get("service"), self.config.get("repository"), self.config.get("revision")):
+        for log in push_docker_image(self.config.get("service"), self.config.get("repository"), self.config.get("revision"), self.config.get("id")):
             if "repository:" in log:
                 self.repository = log
                 continue

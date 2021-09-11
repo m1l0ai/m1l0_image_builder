@@ -1,22 +1,24 @@
 # Functions for building docker images
-from builder.clients.docker import docker_client, docker_api_client
-from builder.authentication.authenticate import authenticate_docker_client, authenticate_ecr
-from builder.authentication.ssm import fetch_credentials
+import contextlib
+from io import BytesIO
+import json
+import logging
+import os
+import shutil
+import tempfile
+import textwrap
+import tarfile
+import time
+
 from docker.errors import APIError
 from docker.errors import ImageNotFound
 from jinja2 import Environment, FileSystemLoader
 from jinja2 import select_autoescape
-import os
-import shutil
-import logging
-import contextlib
-import tempfile
-import shutil
-import json
-import textwrap
-import tarfile
-from io import BytesIO
-import time
+
+from builder.clients.docker import docker_client, docker_api_client
+from builder.authentication.authenticate import authenticate_docker_client, authenticate_ecr
+from builder.authentication.ssm import fetch_credentials
+from builder.core.cloudwatchlogs import send_to_cloudwatch
 
 
 module_logger = logging.getLogger('builder.repo')
@@ -48,7 +50,7 @@ def create_dockerfile(config, tmpl_dir, code_dir, dockerfile_path=None, has_requ
 
     Receives a temp directory of the project to add the required files to build the dockerfile...
     """
-    module_logger.info("[ImageBuilder] Creating dockerfile...")
+    module_logger.info("Creating dockerfile...")
 
     proj_name = config['name']
     project_dir = '/opt/model'
@@ -100,6 +102,7 @@ def create_dockerfile(config, tmpl_dir, code_dir, dockerfile_path=None, has_requ
 def process_build_log(log):
     """Process docker build log line"""
     res = ''
+
     if 'stream' in log:
         res += log['stream']
 
@@ -225,13 +228,31 @@ def build_docker_image(tar_archive, tag, labels, config, encoding="utf-8"):
 
     try:
         logs = api_client.build(**args)
+
+        # TODO: How to stream logs to cloudwatch?
+        # Need to send it in batches??
+        # Yield back the progress bar??
+
+        # Append logs to this list
+        # Once it reaches 
+        logs_cache = []
         for log in logs:
             res = process_build_log(log)
+            logs_cache.append(res)
+
+            if len(logs_cache) == 10:
+                send_to_cloudwatch(config["id"], logs_cache)
+                logs_cache.clear()
+
             if 'Error' in res:
                 raise APIError(res)
             else:
-                module_logger.info(res)
                 yield res
+
+        logs_cache.append(f"Image Name: {tag}")
+        send_to_cloudwatch(config["id"], logs_cache)
+
+        module_logger.info("Completed building project with tag {}".format(tag))
 
         yield "imagename: {}".format(tag)
     except ImageNotFound as e:
@@ -239,7 +260,7 @@ def build_docker_image(tar_archive, tag, labels, config, encoding="utf-8"):
     except APIError as e:
         module_logger.error("Docker API returns an error: {}".format(e))
 
-def push_docker_image(service, repository, revision):
+def push_docker_image(service, repository, revision, job_id):
     """
     Pushes built image
 
@@ -281,15 +302,26 @@ def push_docker_image(service, repository, revision):
 
         logs = api_client.push(repo_name, auth_config=auth_config, tag=revision, stream=True, decode=True)
 
+        logs_cache = []
         for log in logs:
             res = process_build_log(log)
+            logs_cache.append(res)
+
+            if len(logs_cache) == 10:
+                send_to_cloudwatch(job_id, logs_cache)
+                logs_cache.clear()
+
             if 'Error' in res:
                 raise APIError(res)
             else:
-                module_logger.info(res)
                 yield res
 
         full_repo_name = "{}:{}".format(repo_name, revision)
+        
+        logs_cache.append(f"Repository Name: {full_repo_name}")
+        send_to_cloudwatch(job_id, logs_cache)
+
+        module_logger.info("Completed push to repository {}".format(full_repo_name))
 
         yield "repository: {}".format(full_repo_name)
     except ImageNotFound as e:

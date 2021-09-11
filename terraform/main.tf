@@ -153,7 +153,12 @@ module "ecs" {
 }
 
 resource "aws_cloudwatch_log_group" "main" {
-  name = "/ecs/${var.grpc_service_name}-task"
+  name = "/ecs/${var.grpc_service_name}"
+}
+
+# Log group for individual builder jobs
+resource "aws_cloudwatch_log_group" "jobs" {
+  name = "/ecs/${var.grpc_service_name}/jobs"
 }
 
 # create and upload self-sign certs
@@ -518,8 +523,12 @@ resource "aws_ecs_task_definition" "grpc_service" {
           "value" : "${var.aws_region}"
         },
         {
-          "name": "SECRET_NAME",
-          "value": "${var.service_secret_name}"
+          "name" : "SECRET_NAME",
+          "value" : "${var.service_secret_name}"
+        },
+        {
+          "name": "JOB_LOG_GROUP",
+          "value": "/ecs/${var.grpc_service_name}-jobs"
         }
       ],
       "secrets" : [

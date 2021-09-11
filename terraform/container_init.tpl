@@ -10,6 +10,8 @@ ECS_AVAILABLE_LOGGING_DRIVERS=["json-file","awslogs"]
 ECS_CONTAINER_INSTANCE_PROPAGATE_TAGS_FROM=ec2_instance
 ECS_CHECKPOINT=true
 ECS_DATADIR=/data
+ECS_ENGINE_TASK_CLEANUP_WAIT_DURATION=10m
+ECS_IMAGE_CLEANUP_INTERVAL=15m
 EOF
 
 sed -i '/After=cloud-final.service/d' /usr/lib/systemd/system/ecs.service
