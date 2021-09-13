@@ -29,8 +29,6 @@ class ImageBuilder:
             "pyversion": self.request.config.pyversion,
             "resource": self.request.config.resource,
             "entry": self.request.config.entry,
-            # "tags": labels,
-            # "framework_labels": framework_labels,
             "revision": self.request.config.revision,
             "service": self.request.config.service,
             "repository": self.request.config.repository,
@@ -57,25 +55,22 @@ class ImageBuilder:
 
         tmpl_dir = os.path.join(Path(__file__).resolve().cwd(), "builder", "templates")
 
-        # if dockerfile exists, use it
-        # else build it dynamically
-        # if len(self.config["dockerfile"]) > 0:
-        #     df = os.path.join(self.code_copy_path, self.config["dockerfile"])
-        #     if os.path.exists(df):
-        #         print("Custom dockerfile exists!!!")
-        #         with open(df, "r") as f:
-        #             dockerfile = f.read()
-        # else:
-        #     dockerfile = create_dockerfile(self.config, tmpl_dir, self.code_path, dockerfile_path=None, has_requirements=has_requirements, save_file=False)
+        custom_dockerfile = False
 
-        dockerfile = create_dockerfile(self.config, tmpl_dir, self.code_path, dockerfile_path=None, has_requirements=has_requirements, save_file=False)
+        if len(self.config["dockerfile"]) > 0:
+            custom_dockerfile = True
+            df = os.path.join(self.code_copy_path, self.config["dockerfile"])
+            if os.path.exists(df):
+                with open(df, "r") as f:
+                    dockerfile = f.read()
+        else:
+            dockerfile = create_dockerfile(self.config, tmpl_dir, self.code_path, dockerfile_path=None, has_requirements=has_requirements, save_file=False)
 
-        build_context = prepare_archive(dockerfile, self.code_copy_path)
+        build_context = prepare_archive(dockerfile, self.code_copy_path, custom_dockerfile=custom_dockerfile)
 
-        # tag = "{}/{}:{}".format(self.config["namespace"], self.config["name"], self.config["revision"])
         tag = "{}:{}".format(self.config.get("repository"), self.config.get("revision"))
 
-        for log in build_docker_image(build_context, tag, labels, self.config, self.code_copy_path):
+        for log in build_docker_image(build_context, tag, labels, self.config, self.code_copy_path, custom_dockerfile=custom_dockerfile):
             if "imagename:" in log:
                 self.imagename = log
                 continue

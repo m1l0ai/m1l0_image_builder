@@ -22,3 +22,16 @@ To run test client locally:
 make run-client
  
 ```
+
+### Docker build context
+
+Running custom dockerfile
+
+Need to archive dir into flat directory:
+```
+tar -czvf files.tar.gz -C ../mnist_example .
+
+cat files.tar.gz | docker build -  -t myimg:latest
+```
+
+above ^ means to cd into ../mnist_example and 

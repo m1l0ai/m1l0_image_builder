@@ -124,7 +124,7 @@ def process_build_log(log):
 
     return res
 
-def prepare_archive(dockerfile, tmp_code_path, encoding="utf-8"):
+def prepare_archive(dockerfile, tmp_code_path, encoding="utf-8", custom_dockerfile=False):
     """
     Creates an archive of the build context
 
@@ -141,7 +141,10 @@ def prepare_archive(dockerfile, tmp_code_path, encoding="utf-8"):
 
     for x in os.listdir(tmp_code_path):
         p = os.path.join(tmp_code_path, x)
-        archive.add(p, arcname=os.path.join(code_dir, os.path.basename(p)))
+        if custom_dockerfile:
+            archive.add(p, arcname=os.path.join(".", os.path.basename(p)))
+        else:
+            archive.add(p, arcname=os.path.join(code_dir, os.path.basename(p)))
 
     tarstream.seek(0)
     return archive
@@ -187,7 +190,7 @@ def service_login(service, tag=None):
             return status, ecr_url, auth_config
 
 
-def build_docker_image(tar_archive, tag, labels, config, encoding="utf-8"):
+def build_docker_image(tar_archive, tag, labels, config, encoding="utf-8", custom_dockerfile=False):
     """
     Builds docker image with given build context in tar archive
 
@@ -196,21 +199,32 @@ def build_docker_image(tar_archive, tag, labels, config, encoding="utf-8"):
     """
     module_logger.info("Building project with tag {}".format(tag))
 
-    if "dkr.ecr" in config.get("dockerfile_from_image"):
+    # Using the low level api so we can stream the build...
+    api_client = docker_api_client()
+
+    # NOTE: Removing below means the service cannot be
+    # cross platform i.e. cannot use build image from ECR > Dockerhub
+    # Will need to specify the exact service type
+    # Issue is we can't work out the FROM builder image
+    # since we can have multi stage builds in custom dockerfile
+    # if "dkr.ecr" in config.get("dockerfile_from_image"):
+    #     _, _, auth_config = service_login("ecr", tag)
+    # else:
+    #     _, auth_config = service_login("dockerhub")
+
+    if config.get("service") == "ecr":
         _, _, auth_config = service_login("ecr", tag)
     else:
         _, auth_config = service_login("dockerhub")
 
-    # Using the low level api so we can stream the build...
-    api_client = docker_api_client()
-
-    # try pulling image first with auth
-    target_repo, target_tag = config.get("dockerfile_from_image").split(":")
-    api_client.pull(
-        target_repo,
-        tag=target_tag,
-        auth_config=auth_config
-    )
+    if not custom_dockerfile:
+        # try pulling image first with auth
+        target_repo, target_tag = config.get("dockerfile_from_image").split(":")
+        api_client.pull(
+            target_repo,
+            tag=target_tag,
+            auth_config=auth_config
+        )
 
     # Note: Setting pull: True here will cause the docker daemon to only pull images from dockerhub/remote repo so need to set it to false for using local images...
     # https://stackoverflow.com/questions/20481225/how-can-i-use-a-local-image-as-the-base-image-with-a-dockerfile
@@ -229,12 +243,6 @@ def build_docker_image(tar_archive, tag, labels, config, encoding="utf-8"):
     try:
         logs = api_client.build(**args)
 
-        # TODO: How to stream logs to cloudwatch?
-        # Need to send it in batches??
-        # Yield back the progress bar??
-
-        # Append logs to this list
-        # Once it reaches 
         logs_cache = []
         for log in logs:
             res = process_build_log(log)

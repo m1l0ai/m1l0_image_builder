@@ -39,13 +39,16 @@ run-tests:
 # https://github.com/fullstorydev/grpcurl/issues/90
 # TODO: make builder a var so we can also pass in remote host for healthchecks...
 check-service:
-	docker run -v "${PWD}/certs":/tmp/certs --rm --network m1l0net fullstorydev/grpcurl:latest -cacert=/tmp/certs/ca-cert.pem builder.m1l0.xyz:50051 describe
+	# host can be 'builder' on localhost or 'builder.m1l0.xyz'
+	echo "Checking service on $(host)..."
 
-	docker run -v "${PWD}/certs":/tmp/certs --rm --network m1l0net fullstorydev/grpcurl:latest -cacert=/tmp/certs/ca-cert.pem builder.m1l0.xyz:50051 list
+	docker run -v "${PWD}/certs":/tmp/certs --rm --network m1l0net fullstorydev/grpcurl:latest -cacert=/tmp/certs/ca-cert.pem $(host):50051 describe
 
-	docker run -v "${PWD}/certs":/tmp/certs --rm --network m1l0net fullstorydev/grpcurl:latest -cacert=/tmp/certs/ca-cert.pem  builder.m1l0.xyz:50051 grpc.health.v1.Health/Check
+	docker run -v "${PWD}/certs":/tmp/certs --rm --network m1l0net fullstorydev/grpcurl:latest -cacert=/tmp/certs/ca-cert.pem $(host):50051 list
 
-	docker run -v "${PWD}/certs":/tmp/certs --rm --network m1l0net fullstorydev/grpcurl:latest -cacert=/tmp/certs/ca-cert.pem -d '{"service": "grpc.m1l0_services.imagebuilder.ImageBuilder"}' builder.m1l0.xyz:50051 grpc.health.v1.Health/Check
+	docker run -v "${PWD}/certs":/tmp/certs --rm --network m1l0net fullstorydev/grpcurl:latest -cacert=/tmp/certs/ca-cert.pem  $(host):50051 grpc.health.v1.Health/Check
+
+	docker run -v "${PWD}/certs":/tmp/certs --rm --network m1l0net fullstorydev/grpcurl:latest -cacert=/tmp/certs/ca-cert.pem -d '{"service": "grpc.m1l0_services.imagebuilder.ImageBuilder"}' $(host):50051 grpc.health.v1.Health/Check
 
 remove-volumes:
 	docker volume ls --filter label=m1l0.job-id --format "{{.Name}}" | xargs -r docker volume rm
