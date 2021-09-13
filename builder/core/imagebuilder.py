@@ -63,6 +63,8 @@ class ImageBuilder:
             if os.path.exists(df):
                 with open(df, "r") as f:
                     dockerfile = f.read()
+            else:
+                raise RuntimeError("Custom dockerfile specified but not found.")
         else:
             dockerfile = create_dockerfile(self.config, tmpl_dir, self.code_path, dockerfile_path=None, has_requirements=has_requirements, save_file=False)
 

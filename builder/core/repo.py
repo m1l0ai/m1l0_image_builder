@@ -217,14 +217,14 @@ def build_docker_image(tar_archive, tag, labels, config, encoding="utf-8", custo
     else:
         _, auth_config = service_login("dockerhub")
 
-    if not custom_dockerfile:
-        # try pulling image first with auth
-        target_repo, target_tag = config.get("dockerfile_from_image").split(":")
-        api_client.pull(
-            target_repo,
-            tag=target_tag,
-            auth_config=auth_config
-        )
+    # if not custom_dockerfile:
+    #     # try pulling image first with auth
+    #     target_repo, target_tag = config.get("dockerfile_from_image").split(":")
+    #     api_client.pull(
+    #         target_repo,
+    #         tag=target_tag,
+    #         auth_config=auth_config
+    #     )
 
     # Note: Setting pull: True here will cause the docker daemon to only pull images from dockerhub/remote repo so need to set it to false for using local images...
     # https://stackoverflow.com/questions/20481225/how-can-i-use-a-local-image-as-the-base-image-with-a-dockerfile
