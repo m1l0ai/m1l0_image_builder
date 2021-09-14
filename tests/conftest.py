@@ -1,9 +1,31 @@
-import pytest
-import tempfile
+import contextlib
 import os
 from pathlib import Path
 import shutil
-import contextlib
+import tempfile
+
+import boto3
+from moto import mock_s3, mock_secretsmanager
+import pytest
+
+
+@pytest.fixture(scope='function')
+def aws_credentials():
+    """Mocked AWS Credentials for moto."""
+    creds_path = os.path.join(str(Path(__file__).parent.absolute()), "dummy_creds")
+    os.environ["AWS_SHARED_CREDENTIALS_FILE"] = creds_path
+
+
+@pytest.fixture(scope='function')
+def s3(aws_credentials):
+    with mock_s3():
+        yield boto3.client("s3", region_name='us-east-1')
+
+
+@pytest.fixture(scope="function")
+def ssm(aws_credentials):
+    with mock_secretsmanager():
+        yield boto3.client("secretsmanager", region_name='us-east-1')
 
 @pytest.fixture()
 def create_tmp_directory():
@@ -28,6 +50,6 @@ def create_tmp_directory():
         finally:
             if os.path.exists(tmp_folder):
                 shutil.rmtree(tmp_folder)
-            shutil.rmtree(new_dir)
+            shutil.rmtree(new_dir, ignore_errors=True)
 
     return _create_tmp

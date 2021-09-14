@@ -27,8 +27,10 @@ def get_client(service):
 
     return client
 
-def send_to_cloudwatch(stream, events):
-    """Write to log stream"""
+
+def setup_log_stream(stream):
+    """Creates the log stream"""
+    
     log_group = os.environ.get("JOB_LOG_GROUP")
     log_stream = stream
 
@@ -39,9 +41,24 @@ def send_to_cloudwatch(stream, events):
             logGroupName=log_group,
             logStreamName=stream
         )
-    except client.exceptions.ResourceAlreadyExistsException as e:
-        module_logger.info("Log group stream already exists")
+    except client.exceptions.ResourceNotFoundException as e:
+        # if log group does not exist we create it
+        client.create_log_group(
+            logGroupName=log_group
+        )
 
+        client.create_log_stream(
+            logGroupName=log_group,
+            logStreamName=stream
+        )
+    except client.exceptions.ResourceAlreadyExistsException as e:
+        module_logger.info("Log group stream {} already exists".format(stream))
+
+
+def send_to_cloudwatch(stream, events):
+    """Write to log stream"""
+
+    log_group = os.environ.get("JOB_LOG_GROUP")
     log_events = []
     for event in events:
         log_events.append({
@@ -56,6 +73,8 @@ def send_to_cloudwatch(stream, events):
         "logEvents": log_events
     }
 
+    client = get_client("logs")
+    
     try:
         response = client.put_log_events(**log_event)
     except client.exceptions.InvalidSequenceTokenException as e:

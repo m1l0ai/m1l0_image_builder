@@ -18,7 +18,7 @@ from jinja2 import select_autoescape
 from builder.clients.docker import docker_client, docker_api_client
 from builder.authentication.authenticate import authenticate_docker_client, authenticate_ecr
 from builder.authentication.ssm import fetch_credentials
-from builder.core.cloudwatchlogs import send_to_cloudwatch
+from builder.core.cloudwatchlogs import setup_log_stream, send_to_cloudwatch
 
 
 module_logger = logging.getLogger('builder.repo')
@@ -233,6 +233,7 @@ def build_docker_image(tar_archive, tag, labels, config, encoding="utf-8", custo
 
     try:
         logs = api_client.build(**args)
+        setup_log_stream(config["id"])
 
         logs_cache = []
         for log in logs:
@@ -302,6 +303,8 @@ def push_docker_image(service, repository, revision, job_id):
         module_logger.info("Pushing to remote repo: {}:{} ...".format(repo_name, revision))
 
         logs = api_client.push(repo_name, auth_config=auth_config, tag=revision, stream=True, decode=True)
+
+        setup_log_stream(job_id)
 
         logs_cache = []
         for log in logs:

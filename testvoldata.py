@@ -7,7 +7,7 @@ import time
 import subprocess
 import sys
 from docker import APIClient
-from builder.authentication.vaultclient import unseal_vault, vault_still_sealed, check_mounts
+# from builder.authentication.vaultclient import unseal_vault, vault_still_sealed, check_mounts
 
 """
 import tarfile

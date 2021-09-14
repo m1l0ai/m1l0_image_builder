@@ -8,4 +8,5 @@ Makefile
 *.cfg
 setup.py
 test*.py
+tests/
 README.md

@@ -1,6 +1,13 @@
-from builder.core.retriever import GetSourceFiles
-from builder.core.imagebuilder import ImageBuilder
+import base64
+from concurrent import futures
+import logging
+import os
+import sys
+from signal import signal, SIGTERM, SIGINT
+
 import grpc
+from grpc_interceptor import ExceptionToStatusInterceptor
+from grpc_interceptor.exceptions import InvalidArgument
 from grpc_health.v1 import health
 from grpc_health.v1 import health_pb2
 from grpc_health.v1 import health_pb2_grpc
@@ -8,13 +15,9 @@ from grpc_reflection.v1alpha import reflection
 from m1l0_services.imagebuilder import image_builder_pb2_grpc
 from m1l0_services.imagebuilder import image_builder_pb2
 from m1l0_services.imagebuilder.image_builder_pb2 import BuildResponse, BuildLog
-from concurrent import futures
-import sys
-from signal import signal, SIGTERM, SIGINT
-import logging
-import os
-import base64
 
+from builder.core.retriever import GetSourceFiles
+from builder.core.imagebuilder import ImageBuilder
 
 logging.basicConfig(level=logging.INFO)
 module_logger = logging.getLogger("builder")
@@ -25,10 +28,24 @@ module_logger.addHandler(console_handler)
 
 
 class ImageBuilderService(image_builder_pb2_grpc.ImageBuilderServicer):
+    def validate_request(self, request, context):
+        """
+        Validate request object
+
+        Raises exception if request invalid
+        """
+        if request.config.service not in ["dockerhub", "ecr"]:
+            raise InvalidArgument("Service not one of dockerhub/ecr")
+
+        if len(request.config.repository) == 0:
+            raise InvalidArgument("Repository cannot be blank")
+
+        return
+
     def Build(self, request, context):
         module_logger.info("Received build request...")
-        # print(request)
-        # print(context)
+        self.validate_request(request, context)
+
         code_copy_path = GetSourceFiles(request).call()
 
         builder = ImageBuilder(request, code_copy_path)
@@ -45,7 +62,11 @@ class ImageBuilderService(image_builder_pb2_grpc.ImageBuilderServicer):
         builder.cleanup()
 
 def serve(host, port, secure=False, local=False):
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+    interceptors = [ExceptionToStatusInterceptor()]
+    server = grpc.server(
+        futures.ThreadPoolExecutor(max_workers=10),
+        interceptors=interceptors
+    )
 
     image_builder_pb2_grpc.add_ImageBuilderServicer_to_server(ImageBuilderService(), server)
 

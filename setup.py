@@ -36,7 +36,7 @@ setup(
         "click==8.0.1",
         "Jinja2~=2.11",
         "grpcio-tools~=1.30",
-        "m1l0-protobufs~=0.2.0"
+        "m1l0-protobufs~=0.5.0"
     ],
     entry_points={
         "console_scripts": [

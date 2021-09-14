@@ -1,12 +1,14 @@
-from github import Github
-import tempfile
 import os
-import shutil
-from urllib.parse import urlparse
 import pkg_resources
 from pathlib import Path
-import traceback
+import shutil
 import tarfile
+import tempfile
+import traceback
+from urllib.parse import urlparse
+
+from github import Github
+
 from builder.authentication.authenticate import session_client
 from builder.authentication.ssm import fetch_credentials
 

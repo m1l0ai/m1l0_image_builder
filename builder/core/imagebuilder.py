@@ -18,6 +18,8 @@ class ImageBuilder:
         self.request = request
         self.code_copy_path = code_copy_path
         self.code_path = request.id
+        # self.imagename = None
+        # self.repository = None
 
     def build(self):
         self.config = {
