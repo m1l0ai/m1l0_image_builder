@@ -18,9 +18,15 @@ class ImageBuilder:
         self.request = request
         self.code_copy_path = code_copy_path
         self.code_path = request.id
-        # self.imagename = None
-        # self.repository = None
 
+    @property
+    def imagename(self):
+        return self._imagename
+
+    @property
+    def repository(self):
+        return self._repository
+    
     def build(self):
         self.config = {
             "id": self.request.id,
@@ -76,7 +82,7 @@ class ImageBuilder:
 
         for log in build_docker_image(build_context, tag, labels, self.config, self.code_copy_path, custom_dockerfile=custom_dockerfile):
             if "imagename:" in log:
-                self.imagename = log
+                self._imagename = log
                 continue
             else:
                 yield log
@@ -84,7 +90,7 @@ class ImageBuilder:
     def push(self):
         for log in push_docker_image(self.config.get("service"), self.config.get("repository"), self.config.get("revision"), self.config.get("id")):
             if "repository:" in log:
-                self.repository = log
+                self._repository = log
                 continue
             else:
                 yield log

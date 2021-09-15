@@ -176,7 +176,9 @@ terraform.rc
 
 
 # Custom ignores
-test*.py
+testarchive.py
+testpackage.py
+testvoldata.py
 .env*
 ISSUES
 NOTES.md
