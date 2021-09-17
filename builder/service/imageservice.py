@@ -18,6 +18,8 @@ from m1l0_services.imagebuilder.image_builder_pb2 import BuildResponse, BuildLog
 
 from builder.core.retriever import GetSourceFiles
 from builder.core.imagebuilder import ImageBuilder
+from builder.validator.service_request_validator import ServiceRequestValidator
+
 
 logging.basicConfig(level=logging.INFO)
 module_logger = logging.getLogger("builder")
@@ -28,23 +30,11 @@ module_logger.addHandler(console_handler)
 
 
 class ImageBuilderService(image_builder_pb2_grpc.ImageBuilderServicer):
-    def validate_request(self, request, context):
-        """
-        Validate request object
-
-        Raises exception if request invalid
-        """
-        if request.config.service not in ["dockerhub", "ecr"]:
-            raise InvalidArgument("Service not one of dockerhub/ecr")
-
-        if len(request.config.repository) == 0:
-            raise InvalidArgument("Repository cannot be blank")
-
-        return
-
     def Build(self, request, context):
         module_logger.info("Received build request...")
-        self.validate_request(request, context)
+
+        # Validate request
+        ServiceRequestValidator.validate(request)
 
         code_copy_path = GetSourceFiles(request).call()
 
@@ -53,13 +43,19 @@ class ImageBuilderService(image_builder_pb2_grpc.ImageBuilderServicer):
         for log in builder.build():
             yield BuildLog(body=log)
 
+        builder.cleanup_code_path()
+
+    def Push(self, request, context):
+        module_logger.info("Received push request...")
+        # Validate request
+        ServiceRequestValidator.validate(request)
+
+        builder = ImageBuilder(request)
+
         for log in builder.push():
             yield BuildLog(body=log)
 
-        for item in [builder.imagename, builder.repository]:
-            yield BuildLog(body=item)
-
-        builder.cleanup()
+        builder.cleanup_repository()
 
 def serve(host, port, secure=False, local=False):
     interceptors = [ExceptionToStatusInterceptor()]

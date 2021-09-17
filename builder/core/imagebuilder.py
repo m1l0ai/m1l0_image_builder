@@ -14,7 +14,7 @@ class ImageBuilder:
     """
     Actual image builder class
     """
-    def __init__(self, request, code_copy_path):
+    def __init__(self, request, code_copy_path=None):
         self.request = request
         self.code_copy_path = code_copy_path
         self.code_path = request.id
@@ -88,6 +88,21 @@ class ImageBuilder:
                 yield log
 
     def push(self):
+        self.config = {
+            "id": self.request.id,
+            "namespace": self.request.config.namespace,
+            "name": self.request.config.name,
+            "framework": self.request.config.framework,
+            "version": self.request.config.version,
+            "pyversion": self.request.config.pyversion,
+            "resource": self.request.config.resource,
+            "entry": self.request.config.entry,
+            "revision": self.request.config.revision,
+            "service": self.request.config.service,
+            "repository": self.request.config.repository,
+            "dockerfile": self.request.config.dockerfile
+        }
+
         for log in push_docker_image(self.config.get("service"), self.config.get("repository"), self.config.get("revision"), self.config.get("id")):
             if "repository:" in log:
                 self._repository = log
@@ -95,8 +110,10 @@ class ImageBuilder:
             else:
                 yield log
 
-    def cleanup(self):
+    def cleanup_code_path(self):
         shutil.rmtree(self.code_copy_path)
+
+    def cleanup_repository(self):
         # Delete created image self.repository else it will clog up disk
         if os.environ.get("MODE") != "Local":
-            remove_image(self.repository.lstrip("repository: "))
+            remove_image(self._repository.lstrip("repository: "))
