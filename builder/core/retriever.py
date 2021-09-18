@@ -49,6 +49,7 @@ class GetSourceFiles:
             except Exception as e:
                 error_msg = "Dir copy error: \n{}\n{}".format(traceback.format_exc(), str(e))
                 print(error_msg)
+                raise e
         elif parsed_url.scheme == "s3":
             # Get token
             auth_config = fetch_credentials("ecr")

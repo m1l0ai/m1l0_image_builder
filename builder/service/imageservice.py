@@ -37,7 +37,6 @@ class ImageBuilderService(image_builder_pb2_grpc.ImageBuilderServicer):
         ServiceRequestValidator.validate(request)
 
         code_copy_path = GetSourceFiles(request).call()
-
         builder = ImageBuilder(request, code_copy_path)
 
         for log in builder.build():

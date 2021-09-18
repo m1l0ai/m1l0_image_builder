@@ -12,3 +12,6 @@ class ServiceRequestValidator:
 
         if len(request.config.repository) == 0:
             raise InvalidArgument("Repository cannot be blank")
+
+        if len(request.config.source) == 0:
+            raise InvalidArgument("Source cannot be blank")

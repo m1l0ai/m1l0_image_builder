@@ -22,6 +22,19 @@ def test_non_existent_dir_raises_exception():
 
     assert str(exc_info.value) == "Directory /tmp/test does not exist!"
 
+@patch("os.path.exists")
+@patch("shutil.move")
+def test_error_with_processing_dir(mock_shutil, mock_path):
+    mock_path.return_value = True
+    mock_shutil.side_effect = Exception("Dir copy error")
+    request = BuildRequest(id="123", config=BuildConfig(source="dir:///tmp/test"))
+    retriever = GetSourceFiles(request)
+
+    # should raise exception of dir does not exist...
+    with pytest.raises(Exception) as exc_info:
+        retriever.call()
+
+    assert str(exc_info.value) == "Dir copy error"
 
 def test_dir_exists(create_tmp_directory):
     request = BuildRequest(id="123", config=BuildConfig(source="dir:///tmp/test"))

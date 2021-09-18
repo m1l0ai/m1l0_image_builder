@@ -8,6 +8,7 @@ from builder.validator.service_request_validator import ServiceRequestValidator
 
 def test_valid_request():
     config = {
+        "source": "/tmp/123",
         "service": "dockerhub",
         "repository": "m1l0/myproject",
         "revision": "latest"
@@ -51,3 +52,19 @@ def test_invalid_missing_repository():
     with pytest.raises(InvalidArgument) as exc_info:
         ServiceRequestValidator.validate(request)
     assert "Repository cannot be blank" in str(exc_info.value)
+
+def test_invalid_missing_source():
+    config = {
+        "service": "ecr",
+        "revision": "latest",
+        "repository": "m1l0/myproject"
+    }
+
+    request = BuildRequest(
+        id="123", 
+        config=BuildConfig(**config)
+    )
+
+    with pytest.raises(InvalidArgument) as exc_info:
+        ServiceRequestValidator.validate(request)
+    assert "Source cannot be blank" in str(exc_info.value)
