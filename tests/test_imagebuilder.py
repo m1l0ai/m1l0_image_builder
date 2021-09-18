@@ -66,3 +66,54 @@ def test_imagename_property():
 
     assert imagebuilder.imagename == "m1l0/myproject"
     assert imagebuilder.repository == "m1l0/myproject"
+
+@patch("builder.core.imagebuilder.build_docker_image")
+@patch("builder.core.imagebuilder.prepare_archive")
+@patch("builder.core.imagebuilder.create_dockerfile")
+@patch("os.listdir")
+def test_build(mock_listdir, mock_docker, mock_archive, mock_builder):
+    mock_listdir.return_value = iter(["main.py"])
+    mock_docker.return_value = "DOCKERFILE CONTENTS"
+    mock_archive.return_value = "test.tar.gz"
+    mock_builder.return_value = iter(["80%", "90%", "100%", "imagename: m1l0/myproject"])
+
+    config = {
+        "source": "dir:///tmp/123",
+        "service": "dockerhub",
+        "repository": "m1l0/myproject",
+        "revision": "latest"
+    }
+
+    request = BuildRequest(
+        id="123", 
+        config=BuildConfig(**config)
+    )
+
+    imagebuilder = ImageBuilder(request, code_copy_path="/tmp/code/123")
+
+    res = imagebuilder.build()
+    res = list(res)
+    assert res == ["80%", "90%", "100%"]
+    assert imagebuilder.imagename == 'imagename: m1l0/myproject'
+
+@patch("builder.core.imagebuilder.push_docker_image")
+def test_push(mock_push):
+    mock_push.return_value = iter(["80%", "90%", "100%", "repository: m1l0/myproject"])
+
+    config = {
+        "source": "dir:///tmp/123",
+        "service": "dockerhub",
+        "repository": "m1l0/myproject",
+        "revision": "latest"
+    }
+
+    request = BuildRequest(
+        id="123", 
+        config=BuildConfig(**config)
+    )
+
+    imagebuilder = ImageBuilder(request, code_copy_path="/tmp/code/123")
+    res = imagebuilder.push()
+    res = list(res)
+    assert res == ["80%", "90%", "100%"]
+    assert imagebuilder.repository == "repository: m1l0/myproject"

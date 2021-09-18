@@ -1,7 +1,7 @@
 # Client lib to stream logs to cloudwatch
 import json
-import os
 import logging
+import os
 import time
 import traceback
 
@@ -9,7 +9,6 @@ import boto3
 from botocore.exceptions import ClientError
 
 module_logger = logging.getLogger('builder.cloudwatch')
-module_logger.setLevel("INFO")
 
 # https://gist.github.com/olegdulin/fd18906343d75142a487b9a9da9042e0
 

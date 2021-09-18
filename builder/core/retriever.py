@@ -1,3 +1,4 @@
+import logging
 import os
 import pkg_resources
 from pathlib import Path
@@ -11,6 +12,8 @@ from github import Github
 
 from builder.authentication.authenticate import session_client
 from builder.authentication.ssm import fetch_credentials
+
+module_logger = logging.getLogger('builder.retriever')
 
 class GetSourceFiles:
     """
@@ -48,7 +51,7 @@ class GetSourceFiles:
                 shutil.rmtree(code_copy_path + "_tmp")
             except Exception as e:
                 error_msg = "Dir copy error: \n{}\n{}".format(traceback.format_exc(), str(e))
-                print(error_msg)
+                module_logger.error(error_msg)
                 raise e
         elif parsed_url.scheme == "s3":
             # Get token

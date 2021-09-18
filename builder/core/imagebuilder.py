@@ -57,9 +57,9 @@ class ImageBuilder:
 
         has_requirements = False
         files_list = os.listdir(self.code_copy_path)
+
         if "requirements.txt" in files_list:
             has_requirements = True
-
 
         tmpl_dir = os.path.join(Path(__file__).resolve().cwd(), "builder", "templates")
 
