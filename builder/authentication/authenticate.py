@@ -1,7 +1,14 @@
-from docker.errors import APIError
-import boto3
 import base64
+import boto3
+from docker.errors import APIError
 
+
+def session_client(service, auth_config):
+    """
+    Creates and returns a boto3 session client
+    """
+    session = boto3.session.Session(**auth_config)
+    return session.client(service)
 
 def get_ecr_image_prefix(auth_config):
     """
@@ -12,12 +19,6 @@ def get_ecr_image_prefix(auth_config):
     account_id = sts_client.get_caller_identity().get("Account")
     return "{}.dkr.ecr.{}.amazonaws.com".format(account_id, auth_config.get("region"))
 
-def session_client(service, auth_config):
-    """
-    Creates and returns a boto3 session client
-    """
-    session = boto3.session.Session(**auth_config)
-    return session.client(service)
 
 def authenticate_ecr(auth_config, tag):
     """

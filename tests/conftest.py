@@ -5,7 +5,7 @@ import shutil
 import tempfile
 
 import boto3
-from moto import mock_s3, mock_secretsmanager
+from moto import mock_s3, mock_secretsmanager, mock_sts
 import pytest
 
 
@@ -26,6 +26,11 @@ def s3(aws_credentials):
 def ssm(aws_credentials):
     with mock_secretsmanager():
         yield boto3.client("secretsmanager", region_name='us-east-1')
+
+@pytest.fixture(scope="function")
+def sts(aws_credentials):
+    with mock_sts():
+        yield boto3.client("sts", region_name="us-east-1")
 
 @pytest.fixture()
 def create_tmp_directory():

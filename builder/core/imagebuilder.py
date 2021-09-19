@@ -1,13 +1,8 @@
-# Core classes for building images
-from .repo import create_dockerfile, prepare_archive, build_docker_image, push_docker_image, remove_image
-from github import Github
-import tempfile
 import os
-import shutil
-from urllib.parse import urlparse
-import pkg_resources
 from pathlib import Path
-import traceback
+import shutil
+
+from .repo import create_dockerfile, prepare_archive, build_docker_image, push_docker_image, remove_image
 
 
 class ImageBuilder:
@@ -26,7 +21,7 @@ class ImageBuilder:
     @property
     def repository(self):
         return self._repository
-    
+
     def build(self):
         self.config = {
             "id": self.request.id,
@@ -74,13 +69,25 @@ class ImageBuilder:
             else:
                 raise RuntimeError("Custom dockerfile specified but not found.")
         else:
-            dockerfile = create_dockerfile(self.config, tmpl_dir, self.code_path, dockerfile_path=None, has_requirements=has_requirements, save_file=False)
+            dockerfile = create_dockerfile(
+                self.config,
+                tmpl_dir,
+                self.code_path,
+                dockerfile_path=None,
+                has_requirements=has_requirements,
+                save_file=False
+            )
 
         build_context = prepare_archive(dockerfile, self.code_copy_path, custom_dockerfile=custom_dockerfile)
 
         tag = "{}:{}".format(self.config.get("repository"), self.config.get("revision"))
 
-        for log in build_docker_image(build_context, tag, labels, self.config, self.code_copy_path, custom_dockerfile=custom_dockerfile):
+        for log in build_docker_image(build_context,
+                                      tag,
+                                      labels,
+                                      self.config,
+                                      self.code_copy_path,
+                                      custom_dockerfile=custom_dockerfile):
             if "imagename:" in log:
                 self._imagename = log
                 continue
@@ -103,7 +110,10 @@ class ImageBuilder:
             "dockerfile": self.request.config.dockerfile
         }
 
-        for log in push_docker_image(self.config.get("service"), self.config.get("repository"), self.config.get("revision"), self.config.get("id")):
+        for log in push_docker_image(self.config.get("service"),
+                                     self.config.get("repository"),
+                                     self.config.get("revision"),
+                                     self.config.get("id")):
             if "repository:" in log:
                 self._repository = log
                 continue
