@@ -40,7 +40,6 @@
 
 * Change to using buildah for the builds ?? Install and package buildah with the service image ???
 
-* If Dockerfile exists in build context or specified in config file in request we use it instead
 
 * How to inject sensitive creds into container??
 

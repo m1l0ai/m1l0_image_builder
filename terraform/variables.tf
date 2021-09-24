@@ -95,3 +95,9 @@ variable "service_secret_name" {
   type        = string
   default     = ""
 }
+
+variable "m1l0_ca_cert" {
+  description = "Path to where ca cert is stored"
+  type        = string
+  default     = ""
+}

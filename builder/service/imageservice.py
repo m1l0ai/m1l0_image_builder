@@ -60,7 +60,7 @@ def serve(host, port, secure=False, local=False):
     interceptors = [ExceptionToStatusInterceptor()]
     server = grpc.server(
         futures.ThreadPoolExecutor(max_workers=10),
-        interceptors=interceptors
+        # interceptors=interceptors
     )
 
     image_builder_pb2_grpc.add_ImageBuilderServicer_to_server(ImageBuilderService(), server)
@@ -81,12 +81,21 @@ def serve(host, port, secure=False, local=False):
             # if so we base64 decode them 
             b64server_key = os.environ.get("M1L0_BUILDER_KEY")
             b64server_crt = os.environ.get("M1L0_BUILDER_CERT")
+            b64server_ca = os.environ.get("M1L0_BUILDER_CA_CERT")
 
             if not all([b64server_key, b64server_crt]):
                 raise RuntimeError("No private key and certificate found.")
             else:
                 server_key = base64.b64decode(b64server_key)
                 server_crt = base64.b64decode(b64server_crt)
+                ca_crt = base64.b64decode(b64server_ca)
+                ca_path = os.environ.get("M1L0_BUILDER_CA_PATH")
+
+                if not os.path.exists("/certs"):
+                    os.makedirs("/certs")
+
+                with open(ca_path, "wb") as f:
+                    f.write(ca_crt)
 
         creds = grpc.ssl_server_credentials([(server_key, server_crt)],         require_client_auth=False)
         server.add_secure_port(listen_address, creds)

@@ -60,13 +60,11 @@ COPY --from=builder /myvenv /myvenv
 COPY ./builder /builder
 COPY ./main.py /main.py
 
-COPY ./certs/server-cert.pem /certs/ca-cert.pem
-
 # Copy healthprobe
 COPY --from=builder /bin/grpc_health_probe /bin/grpc_health_probe
 
 RUN chmod +x /bin/grpc_health_probe
 
-HEALTHCHECK --interval=10s --retries=3 CMD /bin/grpc_health_probe -addr=localhost:50051 -tls -tls-ca-cert=/certs/ca-cert.pem
+HEALTHCHECK --interval=10s --retries=3 CMD /bin/grpc_health_probe -addr=localhost:50051 -tls -tls-ca-cert=${M1L0_BUILDER_CA_PATH}
 
 ENTRYPOINT ["python", "main.py"]

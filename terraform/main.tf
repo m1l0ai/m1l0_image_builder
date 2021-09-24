@@ -478,6 +478,15 @@ resource "aws_secretsmanager_secret_version" "builder_crt" {
   secret_string = filebase64("../certs/server-cert.pem")
 }
 
+resource "aws_secretsmanager_secret" "builder_ca_crt" {
+  name = "m1l0-builder-v${random_id.server.hex}-ca-crt"
+}
+
+resource "aws_secretsmanager_secret_version" "builder_ca_crt" {
+  secret_id     = aws_secretsmanager_secret.builder_ca_crt.id
+  secret_string = filebase64("../certs/ca-cert.pem")
+}
+
 
 # Task definition for service
 resource "aws_ecs_task_definition" "grpc_service" {
@@ -529,6 +538,10 @@ resource "aws_ecs_task_definition" "grpc_service" {
         {
           "name" : "JOB_LOG_GROUP",
           "value" : "/ecs/${var.grpc_service_name}/jobs"
+        },
+        {
+          "name" : "M1L0_BUILDER_CA_PATH",
+          "value" : "${var.m1l0_ca_cert}"
         }
       ],
       "secrets" : [
@@ -539,6 +552,10 @@ resource "aws_ecs_task_definition" "grpc_service" {
         {
           "name" : "M1L0_BUILDER_CERT",
           "valueFrom" : aws_secretsmanager_secret_version.builder_crt.arn
+        },
+        {
+          "name" : "M1L0_BUILDER_CA_CERT",
+          "valueFrom" : aws_secretsmanager_secret_version.builder_ca_crt.arn
         }
       ],
       "logConfiguration" : {
@@ -560,7 +577,17 @@ resource "aws_ecs_task_definition" "grpc_service" {
           "containerPath" : "/tmp/code",
           "readOnly" : false
         }
-      ]
+      ],
+      "healthCheck" : {
+        "command" : [
+          "/bin/grpc_health_probe",
+          "-addr=localhost:50051",
+          "-tls",
+          "-tls-ca-cert=${var.m1l0_ca_cert}"
+        ],
+        "interval" : 10,
+        "retries" : 3
+      },
     }
   ])
 }
