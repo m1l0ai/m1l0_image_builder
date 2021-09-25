@@ -16,6 +16,7 @@ from m1l0_services.imagebuilder import image_builder_pb2_grpc
 from m1l0_services.imagebuilder import image_builder_pb2
 from m1l0_services.imagebuilder.image_builder_pb2 import BuildResponse, BuildLog
 
+from builder.core.dynamodb import get_image_record
 from builder.core.retriever import GetSourceFiles
 from builder.core.imagebuilder import ImageBuilder
 from builder.validator.service_request_validator import ServiceRequestValidator
@@ -55,6 +56,12 @@ class ImageBuilderService(image_builder_pb2_grpc.ImageBuilderServicer):
             yield BuildLog(body=log)
 
         builder.cleanup_repository()
+
+    def Find(self, request, context):
+        module_logger.info("Received query request...")
+        db_resp = get_image_record(request.id)
+        resp = BuildResponse(**db_resp)
+        return resp
 
 def serve(host, port, secure=False, local=False):
     interceptors = [ExceptionToStatusInterceptor()]
