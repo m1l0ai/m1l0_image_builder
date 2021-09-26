@@ -332,7 +332,7 @@ def push_docker_image(service, repository, revision, job_id):
         module_logger.info("Completed push to repository {}".format(full_repo_name))
 
         # Update DB record
-        update_image_record(config["id"], "Repository", full_repo_name)
+        update_image_record(job_id, "Repository", full_repo_name)
 
         yield "repository: {}".format(full_repo_name)
     except ImageNotFound as e:

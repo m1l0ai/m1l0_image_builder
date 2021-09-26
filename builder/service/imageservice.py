@@ -12,9 +12,9 @@ from grpc_health.v1 import health
 from grpc_health.v1 import health_pb2
 from grpc_health.v1 import health_pb2_grpc
 from grpc_reflection.v1alpha import reflection
-from m1l0_services.imagebuilder import image_builder_pb2_grpc
-from m1l0_services.imagebuilder import image_builder_pb2
-from m1l0_services.imagebuilder.image_builder_pb2 import BuildResponse, BuildLog
+from m1l0_services.imagebuilder.v1 import imagebuilder_service_pb2_grpc
+from m1l0_services.imagebuilder.v1 import imagebuilder_service_pb2
+from m1l0_services.imagebuilder.v1.imagebuilder_service_pb2 import BuildResponse, FindResponse
 
 from builder.core.dynamodb import get_image_record
 from builder.core.retriever import GetSourceFiles
@@ -30,7 +30,7 @@ console_handler.setFormatter(formatter)
 module_logger.addHandler(console_handler)
 
 
-class ImageBuilderService(image_builder_pb2_grpc.ImageBuilderServicer):
+class ImageBuilderService(imagebuilder_service_pb2_grpc.ImageBuilderServiceServicer):
     def Build(self, request, context):
         module_logger.info("Received build request...")
 
@@ -41,7 +41,7 @@ class ImageBuilderService(image_builder_pb2_grpc.ImageBuilderServicer):
         builder = ImageBuilder(request, code_copy_path)
 
         for log in builder.build():
-            yield BuildLog(body=log)
+            yield BuildResponse(body=log)
 
         builder.cleanup_code_path()
 
@@ -53,14 +53,14 @@ class ImageBuilderService(image_builder_pb2_grpc.ImageBuilderServicer):
         builder = ImageBuilder(request)
 
         for log in builder.push():
-            yield BuildLog(body=log)
+            yield BuildResponse(body=log)
 
         builder.cleanup_repository()
 
     def Find(self, request, context):
         module_logger.info("Received query request...")
         db_resp = get_image_record(request.id)
-        resp = BuildResponse(**db_resp)
+        resp = FindResponse(**db_resp)
         return resp
 
 def serve(host, port, secure=False, local=False):
@@ -70,7 +70,7 @@ def serve(host, port, secure=False, local=False):
         # interceptors=interceptors
     )
 
-    image_builder_pb2_grpc.add_ImageBuilderServicer_to_server(ImageBuilderService(), server)
+    imagebuilder_service_pb2_grpc.add_ImageBuilderServiceServicer_to_server(ImageBuilderService(), server)
 
     listen_address = "{}:{}".format(host, port)
 
@@ -129,7 +129,7 @@ def serve(host, port, secure=False, local=False):
 
     services = tuple(
         service.full_name
-        for service in image_builder_pb2.DESCRIPTOR.services_by_name.values()) + (
+        for service in imagebuilder_service_pb2.DESCRIPTOR.services_by_name.values()) + (
             reflection.SERVICE_NAME, health.SERVICE_NAME)
 
     module_logger.info("Services > {}".format(services))

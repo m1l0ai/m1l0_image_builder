@@ -14,9 +14,6 @@ store-private-key:
 create-secrets:
 	aws --profile devs secretsmanager create-secret --name m1l0/creds --secret-string file://ssm.json
 
-build-protobufs:
-	python -m grpc_tools.protoc -I protobufs --python_out=gprotobufs --grpc_python_out=gprotobufs protobufs/image_builder.proto
-
 build-image:
 	docker build --force-rm -t m1l0/builder:latest -f Dockerfile .
 
@@ -48,7 +45,7 @@ check-service:
 
 	docker run -v "${PWD}/certs":/tmp/certs --rm --network m1l0net fullstorydev/grpcurl:latest -cacert=/tmp/certs/ca-cert.pem  $(host):50051 grpc.health.v1.Health/Check
 
-	docker run -v "${PWD}/certs":/tmp/certs --rm --network m1l0net fullstorydev/grpcurl:latest -cacert=/tmp/certs/ca-cert.pem -d '{"service": "grpc.m1l0_services.imagebuilder.ImageBuilder"}' $(host):50051 grpc.health.v1.Health/Check
+	docker run -v "${PWD}/certs":/tmp/certs --rm --network m1l0net fullstorydev/grpcurl:latest -cacert=/tmp/certs/ca-cert.pem -d '{"service": "m1l0_services.imagebuilder.v1.ImageBuilderService"}' $(host):50051 grpc.health.v1.Health/Check
 
 remove-volumes:
 	docker volume ls --filter label=m1l0.job-id --format "{{.Name}}" | xargs -r docker volume rm
