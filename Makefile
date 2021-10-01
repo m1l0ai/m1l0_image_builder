@@ -1,4 +1,4 @@
-.PHONY: build-protobufs remove-volumes dist build-image create-secrets certificates certificates2 store-private-key setup teardown
+.PHONY: build-protobufs remove-volumes dist build-localimage build-remoteimage create-secrets certificates certificates2 store-private-key setup teardown
 
 
 store-private-key:
@@ -14,17 +14,16 @@ store-private-key:
 create-secrets:
 	aws --profile devs secretsmanager create-secret --name m1l0/creds --secret-string file://ssm.json
 
-build-image:
+build-localimage:
 	docker build --force-rm -t m1l0/builder:latest -f Dockerfile .
 
+build-remoteimage:
 	aws --profile $(AWS_PROFILE) ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin $(ECR_REPO)
 
 	docker tag m1l0/builder:latest $(ECR_REPO)/m1l0/builder:latest
 
 	docker push $(ECR_REPO)/m1l0/builder:latest
 
-run-service:
-	python main.py
 
 run-client:
 	 python testpackage.py
@@ -65,7 +64,7 @@ certificates:
 	openssl req -nodes -new -x509 -sha256 -days 1825 -config certificate.conf -extensions 'req_ext' -key certs/server.key -out certs/server.crt
 
 # NOTE: Important the subject field for the CA has to be different than the server and clients below else client will fail with TLS check issues
-certificates2:
+certificatesreq:
 	rm -rf certs/*.pem
 
 	# 1. Generate CA's private key and self-signed certificate
