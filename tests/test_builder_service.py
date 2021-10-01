@@ -4,7 +4,8 @@ from grpc_interceptor.exceptions import InvalidArgument
 import pytest
 
 from builder.service.imageservice import ImageBuilderService
-from m1l0_services.imagebuilder.image_builder_pb2 import BuildRequest, BuildConfig
+from m1l0_services.imagebuilder.v1.imagebuilder_service_pb2 import BuildRequest, PushRequest, BuildConfig
+
 
 @patch("builder.core.retriever.GetSourceFiles.call")
 @patch("builder.core.imagebuilder.ImageBuilder.cleanup_code_path")
@@ -52,7 +53,7 @@ def test_builder_Push(mock_push, mock_cleanup):
         "revision": "latest"
     }
 
-    request = BuildRequest(
+    request = PushRequest(
         id="123", 
         config=BuildConfig(**config)
     )

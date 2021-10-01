@@ -2,7 +2,7 @@ import pytest
 
 from grpc_interceptor.exceptions import InvalidArgument
 
-from m1l0_services.imagebuilder.image_builder_pb2 import BuildRequest, BuildConfig
+from m1l0_services.imagebuilder.v1.imagebuilder_service_pb2 import BuildRequest, BuildConfig
 from builder.validator.service_request_validator import ServiceRequestValidator
 
 

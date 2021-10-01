@@ -14,7 +14,7 @@ from grpc_health.v1 import health_pb2_grpc
 from grpc_reflection.v1alpha import reflection
 from m1l0_services.imagebuilder.v1 import imagebuilder_service_pb2_grpc
 from m1l0_services.imagebuilder.v1 import imagebuilder_service_pb2
-from m1l0_services.imagebuilder.v1.imagebuilder_service_pb2 import BuildResponse, FindResponse
+from m1l0_services.imagebuilder.v1.imagebuilder_service_pb2 import BuildResponse, FindResponse, PushResponse
 
 from builder.core.dynamodb import get_image_record
 from builder.core.retriever import GetSourceFiles
@@ -53,7 +53,7 @@ class ImageBuilderService(imagebuilder_service_pb2_grpc.ImageBuilderServiceServi
         builder = ImageBuilder(request)
 
         for log in builder.push():
-            yield BuildResponse(body=log)
+            yield PushResponse(body=log)
 
         builder.cleanup_repository()
 

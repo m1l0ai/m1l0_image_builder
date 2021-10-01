@@ -10,7 +10,7 @@ import pytest
 from unittest.mock import patch, Mock, call
 
 from builder.core.retriever import GetSourceFiles
-from m1l0_services.imagebuilder.image_builder_pb2 import BuildRequest, BuildResponse, BuildTags, BuildIgnores, BuildConfig
+from m1l0_services.imagebuilder.v1.imagebuilder_service_pb2 import BuildRequest, BuildResponse, BuildTags, BuildIgnores, BuildConfig
 
 def test_non_existent_dir_raises_exception():
     request = BuildRequest(id="123", config=BuildConfig(source="dir:///tmp/test"))

@@ -19,7 +19,6 @@ from builder.clients.docker import docker_client, docker_api_client
 from builder.authentication.authenticate import authenticate_docker_client, authenticate_ecr
 from builder.authentication.ssm import fetch_credentials
 from builder.core.cloudwatchlogs import setup_log_stream, send_to_cloudwatch
-from builder.core.dynamodb import update_image_record
 
 
 module_logger = logging.getLogger('builder.repo')
@@ -256,8 +255,7 @@ def build_docker_image(tar_archive, tag, labels, config, encoding="utf-8", custo
         module_logger.info("Completed building project with tag {}".format(tag))
 
         # Update DB record
-        update_image_record(config["id"], "ImageName", tag)
-
+        # TODO: Update artifacts in MLMD
         yield "imagename: {}".format(tag)
     except ImageNotFound as e:
         module_logger.error("Error with building image: {}".format(e))
@@ -332,7 +330,7 @@ def push_docker_image(service, repository, revision, job_id):
         module_logger.info("Completed push to repository {}".format(full_repo_name))
 
         # Update DB record
-        update_image_record(job_id, "Repository", full_repo_name)
+        # TODO: Update artifacts in MLMD
 
         yield "repository: {}".format(full_repo_name)
     except ImageNotFound as e:

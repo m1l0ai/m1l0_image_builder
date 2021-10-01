@@ -37,7 +37,7 @@ setup(
         "Jinja2~=2.11",
         "grpcio-tools~=1.30",
         "grpc-interceptor==0.12.0",
-        "m1l0-protobufs~=0.8.0"
+        "m1l0-protobufs~=0.9.0"
     ],
     entry_points={
         "console_scripts": [

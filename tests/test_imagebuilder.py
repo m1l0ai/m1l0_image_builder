@@ -2,7 +2,7 @@ import os
 from unittest.mock import patch, Mock, PropertyMock
 
 import pytest
-from m1l0_services.imagebuilder.image_builder_pb2 import BuildRequest, BuildConfig
+from m1l0_services.imagebuilder.v1.imagebuilder_service_pb2 import BuildRequest, BuildConfig
 
 from builder.core.imagebuilder import ImageBuilder
 
