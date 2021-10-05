@@ -28,28 +28,16 @@ It relies on the (m1l0-protobufs)[https://github.com/m1l0ai/m1l0-protobufs]
   make certificatesreq
   ```
 
-* Create a ssm.json file with the following fields:
-  ```
-  {
-    "DOCKERHUB_USER": "user",
-    "DOCKERHUB_TOKEN": "token",
-    "GITHUB_TOKEN": "token"
-  }
-  ```
-
-  Then run `make create-secrets` to create a AWS Secrets manager dict which holds the credentials for Dockerhub and Github to build/push images.
-
-  The ssm.json file is also required in the terraform scripts
-
-
 * Create a .env file with the following:
   ```
-  MODE=Local
-  SECRET_NAME=<secret name from above step>
-  AWS_DEFAULT_REGION=<region name>
-  AWS_PROFILE=<profile name>
-  JOB_LOG_GROUP=<arn of cloudwatch log group>
-  M1L0_BUILDER_CA_PATH=/certs/ca-cert.pem
+  export MODE=Local
+  export AWS_DEFAULT_REGION=<region name>
+  export AWS_PROFILE=<profile name>
+  export JOB_LOG_GROUP=<arn of cloudwatch log group>
+  export M1L0_BUILDER_CA_PATH=/certs/ca-cert.pem
+  export TF_VAR_DOCKERHUB_USER=<dockerhub user>
+  export TF_VAR_DOCKERHUB_TOKEN=<dockerhub token>
+  export TF_VAR_GITHUB_TOKEN=<github api token>
   ```
 
   The `MODE=Local` field means to run it locally.
@@ -60,6 +48,10 @@ It relies on the (m1l0-protobufs)[https://github.com/m1l0ai/m1l0-protobufs]
 
   
   The `JOB_LOG_GROUP` is a cloudwatch log group to store the job runs
+
+  The `M1L0_BUILDER_CA_PATH` sets the ca cert path for the healthcheck service
+
+  The `TF_VAR` variables set the service credentials required for both running the service locally and for deployment on AWS using terraform.
 
 
 * Start the service:
@@ -103,14 +95,7 @@ It relies on the (m1l0-protobufs)[https://github.com/m1l0ai/m1l0-protobufs]
         "revision": "latest",
         "namespace": "myprojects",
         "name": "myproject",
-        # specify either dockerfile on its own
-        # or to use prebuilt image specify framework, version, pyversion, resource 
-        # if dockerfile specified, it will take precedence
         "dockerfile": "Dockerfile",
-        "framework": "tensorflow",
-        "version": "2.6.0",
-        "pyversion": "3.6",
-        "resource": "cpu",
         "entry": "main.py",
         "tags": [{'Key': 'Project', 'Value': 'mnist'}, {'Key': 'Framework', 'Value': 'tensorflow-cpu-2.4.0'}],
         "source": "https://github.com/myrepo/myproject.git",
@@ -183,15 +168,6 @@ It relies on the (m1l0-protobufs)[https://github.com/m1l0ai/m1l0-protobufs]
 
     This takes precedence
 
-  * framework, version, pyversion, resource
-
-    If no dockerfile is specified, the service tries to create a Dockerfile with a FROM image string of the following format:
-    ```
-    ARG BUILDER=m1l0/tensorflow:2.6.0-py3.6-cpu
-    ```
-
-    It will attempt to pull the image from the m1l0 dockerhub repo in the form of m1l0/<framework>:<version>-py<pyversion>-<resource>
-
   * entry
 
     Name of file to set as ENTRYPOINT in image
@@ -225,7 +201,40 @@ To run the tests:
 python setup.py test
 ```
 
-### Note on Docker build context
+### Deployment
+
+The terraform scripts in the `terraform` directory allows you to deploy the service on ECS with the following resources:
+
+
+* VPC with private and public subnets. The service is located in private subnet.
+
+* EC2 Container instance running ECS AMI image which runs the service
+
+* EC2 Instance running as bastion host in public subnet
+
+* Keypair for SSH access
+
+* IAM policies
+
+* Application Load Balancer with target group with gRPC protocol
+
+* Certificate Manager for private and CA certs
+
+* Secrets manager entries for docker and github services
+
+To deploy:
+```
+source .env
+
+make setup
+```
+
+To teardown:
+```
+make teardown
+```
+
+### Notes on Docker build context
 
 To create a build context as a 'tar.gz' archive, need to add the source as a flat directory into the archive:
 
@@ -234,3 +243,7 @@ tar -czvf context.tar.gz -C <project source> .
 
 cat context.tar.gz | docker build -  -t myimg:latest
 ```
+
+### TODO:
+
+* Setting up metadata store to store records of build artifacts

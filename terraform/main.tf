@@ -17,6 +17,15 @@ locals {
   account_id  = data.aws_caller_identity.current.account_id
   zone_name   = "m1l0.xyz"
   domain_name = "builder.m1l0.xyz"
+
+  ssm = merge(
+    var.ssm_json,
+    {
+      DOCKERHUB_USER  = var.DOCKERHUB_USER,
+      DOCKERHUB_TOKEN = var.DOCKERHUB_TOKEN,
+      GITHUB_TOKEN    = var.GITHUB_TOKEN
+    }
+  )
 }
 
 module "vpc" {
@@ -487,6 +496,16 @@ resource "aws_secretsmanager_secret_version" "builder_ca_crt" {
   secret_string = filebase64("../certs/ca-cert.pem")
 }
 
+# create service only credentials
+resource "aws_secretsmanager_secret" "builder_creds" {
+  name = "m1l0-builder-v${random_id.server.hex}-creds"
+}
+
+resource "aws_secretsmanager_secret_version" "builder_creds" {
+  secret_id     = aws_secretsmanager_secret.builder_creds.id
+  secret_string = jsonencode(local.ssm)
+}
+
 
 # Task definition for service
 resource "aws_ecs_task_definition" "grpc_service" {
@@ -533,7 +552,7 @@ resource "aws_ecs_task_definition" "grpc_service" {
         },
         {
           "name" : "SECRET_NAME",
-          "value" : "${var.service_secret_name}"
+          "value" : "${aws_secretsmanager_secret_version.builder_creds.arn}"
         },
         {
           "name" : "JOB_LOG_GROUP",

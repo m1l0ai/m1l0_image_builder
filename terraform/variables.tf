@@ -101,3 +101,24 @@ variable "m1l0_ca_cert" {
   type        = string
   default     = ""
 }
+
+variable "ssm_json" {
+  description = "Map of service credentials for SSM"
+  type        = map(string)
+  default     = {}
+}
+
+variable "DOCKERHUB_USER" {
+  type        = string
+  description = "Docker service user"
+}
+
+variable "DOCKERHUB_TOKEN" {
+  type        = string
+  description = "Docker service secret"
+}
+
+variable "GITHUB_TOKEN" {
+  type        = string
+  description = "Github service secret"
+}

@@ -1,15 +1,41 @@
+import base64
+import json
+import os
+
 import boto3
 from botocore.exceptions import ClientError
 import requests
-import os
-import base64
-import json
 
+
+def fetch_local_credentials(service):
+    auth_config = dict()
+
+    if service == "dockerhub":
+        auth_config = {
+            "username": os.environ.get("TF_VAR_DOCKERHUB_USER"),
+            "password": os.environ.get("TF_VAR_DOCKERHUB_TOKEN")
+        }
+    elif service == "ecr":
+        auth_config = {
+            "profile_name": os.environ.get("AWS_PROFILE"), 
+            "region_name": os.environ.get("AWS_DEFAULT_REGION")
+        }
+    elif service == "github":
+        auth_config = {
+            "token": os.environ.get("TF_VAR_GITHUB_TOKEN")
+        }
+
+    return auth_config
+    
 
 def fetch_credentials(service):
     """
     Fetches the required creds from SSM service
     """
+    if os.environ.get("MODE") == "Local":
+        return fetch_local_credentials(service)
+
+
     secret_name = os.environ.get("SECRET_NAME")
     region = os.environ.get("AWS_DEFAULT_REGION")
 
