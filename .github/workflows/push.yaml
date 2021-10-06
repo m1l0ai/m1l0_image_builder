@@ -40,7 +40,7 @@ jobs:
           images: |
             m1l0/imagebuilder
           tags: |
-            type=raw,value=1.0.${{ github.run_number }}
+            type=ref,event=branch,
             type=raw,value=latest,priority=1000
 
       - name: Login to dockerhub
