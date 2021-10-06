@@ -2,7 +2,9 @@ name: m1l0-image-builder_pull
 on: pull_request
 jobs:
   build:
+    name: "Running tests and linting"
     runs-on: ubuntu-latest
+    environment: development
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
