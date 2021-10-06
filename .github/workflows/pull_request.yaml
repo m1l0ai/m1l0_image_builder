@@ -15,3 +15,6 @@ jobs:
       - name: Run test
         run: |
           python setup.py test 
+      - name: Run flake8
+        run: |
+          python setup.py flake8
