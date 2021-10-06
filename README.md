@@ -1,10 +1,10 @@
-### M1L0 Image Builder
+## M1L0 Image Builder
 
 gRPC service that packages and builds a ML project into a docker image for training
 
 This component is part of a MLOPS pipeline project which is in development
 
-It relies on the (m1l0-protobufs)[https://github.com/m1l0ai/m1l0-protobufs]
+It relies on the [m1l0-protobufs](https://github.com/m1l0ai/m1l0-protobufs)
 
 
 ### Call/invoking service locally
@@ -12,7 +12,6 @@ It relies on the (m1l0-protobufs)[https://github.com/m1l0ai/m1l0-protobufs]
 * Install the protobufs first:
   ```
   pip install m1l0-protobufs
-
   ```
 
 * Create a set of TLS certificates as the service runs using secure connections:
