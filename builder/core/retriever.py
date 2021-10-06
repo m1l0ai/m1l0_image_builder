@@ -1,7 +1,5 @@
 import logging
 import os
-import pkg_resources
-from pathlib import Path
 import shutil
 import tarfile
 import tempfile
@@ -14,6 +12,7 @@ from builder.authentication.authenticate import session_client
 from builder.authentication.ssm import fetch_credentials
 
 module_logger = logging.getLogger('builder.retriever')
+
 
 class GetSourceFiles:
     """
@@ -78,7 +77,6 @@ class GetSourceFiles:
             repo = github_client.get_repo(parsed_url.path.lstrip("/").split(".git")[0])
             cmd = "git clone {} {}".format(repo.clone_url, code_copy_path + "_tmp")
             os.system(cmd)
-            
             shutil.copytree(code_copy_path + "_tmp", code_copy_path, ignore=shutil.ignore_patterns(*ignores))
 
             shutil.rmtree(code_copy_path + "_tmp")

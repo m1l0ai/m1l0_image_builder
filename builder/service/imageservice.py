@@ -6,8 +6,6 @@ import sys
 from signal import signal, SIGTERM, SIGINT
 
 import grpc
-from grpc_interceptor import ExceptionToStatusInterceptor
-from grpc_interceptor.exceptions import InvalidArgument
 from grpc_health.v1 import health
 from grpc_health.v1 import health_pb2
 from grpc_health.v1 import health_pb2_grpc
@@ -16,7 +14,6 @@ from m1l0_services.imagebuilder.v1 import imagebuilder_service_pb2_grpc
 from m1l0_services.imagebuilder.v1 import imagebuilder_service_pb2
 from m1l0_services.imagebuilder.v1.imagebuilder_service_pb2 import BuildResponse, FindResponse, PushResponse
 
-from builder.core.dynamodb import get_image_record
 from builder.core.retriever import GetSourceFiles
 from builder.core.imagebuilder import ImageBuilder
 from builder.validator.service_request_validator import ServiceRequestValidator
@@ -59,15 +56,13 @@ class ImageBuilderService(imagebuilder_service_pb2_grpc.ImageBuilderServiceServi
 
     def Find(self, request, context):
         module_logger.info("Received query request...")
-        db_resp = get_image_record(request.id)
-        resp = FindResponse(**db_resp)
+        resp = FindResponse()
         return resp
 
+
 def serve(host, port, secure=False, local=False):
-    interceptors = [ExceptionToStatusInterceptor()]
     server = grpc.server(
         futures.ThreadPoolExecutor(max_workers=10),
-        # interceptors=interceptors
     )
 
     imagebuilder_service_pb2_grpc.add_ImageBuilderServiceServicer_to_server(ImageBuilderService(), server)
@@ -85,7 +80,7 @@ def serve(host, port, secure=False, local=False):
                 server_crt = f.read()
         else:
             # Check if ENV var set for the keys
-            # if so we base64 decode them 
+            # if so we base64 decode them
             b64server_key = os.environ.get("M1L0_BUILDER_KEY")
             b64server_crt = os.environ.get("M1L0_BUILDER_CERT")
             b64server_ca = os.environ.get("M1L0_BUILDER_CA_CERT")
@@ -136,7 +131,6 @@ def serve(host, port, secure=False, local=False):
     for service in services:
         health_servicer.set(service, health_pb2.HealthCheckResponse.SERVING)
 
-    
     # Need to enable reflection below to allow use of grpcurl
     reflection.enable_server_reflection(services, server)
 

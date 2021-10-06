@@ -1,7 +1,6 @@
 # Functions for building docker images
 import contextlib
 from io import BytesIO
-import json
 import logging
 import os
 import shutil
@@ -13,9 +12,8 @@ import time
 from docker.errors import APIError
 from docker.errors import ImageNotFound
 from jinja2 import Environment, FileSystemLoader
-from jinja2 import select_autoescape
 
-from builder.clients.docker import docker_client, docker_api_client
+from builder.clients.docker import docker_api_client
 from builder.authentication.authenticate import authenticate_docker_client, authenticate_ecr
 from builder.authentication.ssm import fetch_credentials
 from builder.core.cloudwatchlogs import setup_log_stream, send_to_cloudwatch
@@ -24,6 +22,7 @@ from builder.core.cloudwatchlogs import setup_log_stream, send_to_cloudwatch
 module_logger = logging.getLogger('builder.repo')
 module_logger.setLevel("INFO")
 
+
 @contextlib.contextmanager
 def tempdir(suffix="", prefix="tmp"):
     """Creates a temp dir to hold the model files"""
@@ -31,20 +30,33 @@ def tempdir(suffix="", prefix="tmp"):
     yield tmp
     shutil.rmtree(tmp)
 
+
 def get_build_image(config):
     """
     Generates the FROM builder string in Dockerfile
 
     if base image supplied it would be like 'tensorflow/0.2.4:latest' for example...
     """
+
     if "baseimage" in config:
         builder_image = config["baseimage"]
     else:
-        builder_image = "m1l0/{}:{}-py{}-{}".format(config['framework'], config['version'], config['pyversion'], config['resource'])
+        builder_image = "m1l0/{}:{}-py{}-{}".format(
+            config['framework'],
+            config['version'],
+            config['pyversion'],
+            config['resource']
+        )
 
     return builder_image
 
-def create_dockerfile(config, tmpl_dir, code_dir, dockerfile_path=None, has_requirements=False, save_file=False, local=False, ecr_prefix=None):
+
+def create_dockerfile(config, tmpl_dir, code_dir,
+                      dockerfile_path=None,
+                      has_requirements=False,
+                      save_file=False,
+                      local=False,
+                      ecr_prefix=None):
     """
     Creates a dockerfile from train job obj
 
@@ -52,10 +64,7 @@ def create_dockerfile(config, tmpl_dir, code_dir, dockerfile_path=None, has_requ
     """
     module_logger.info("Creating dockerfile...")
 
-    proj_name = config['name']
     project_dir = '/opt/model'
-    working_dir = '/opt/model/jobs'
-
     tags = config["tags"]
     framework_labels = config["framework_labels"]
 
@@ -88,7 +97,15 @@ def create_dockerfile(config, tmpl_dir, code_dir, dockerfile_path=None, has_requ
     # Set dockerfile from image on config object
     config["dockerfile_from_image"] = builder_image
 
-    dockerfile_str = template.render(builder=builder_image, files=files_copy_cmd, requirements=reqs_cmd, requirements_copy_cmd=requirements_copy_cmd, entrypoint=entrypoint, tags=tags, framework_labels=framework_labels, pyversion=config["pyversion"])
+    dockerfile_str = template.render(
+        builder=builder_image,
+        files=files_copy_cmd,
+        requirements=reqs_cmd,
+        requirements_copy_cmd=requirements_copy_cmd,
+        entrypoint=entrypoint,
+        tags=tags,
+        framework_labels=framework_labels,
+        pyversion=config["pyversion"])
 
     if save_file:
         dockerfile = os.path.join(dockerfile_path, "Dockerfile")
@@ -98,6 +115,7 @@ def create_dockerfile(config, tmpl_dir, code_dir, dockerfile_path=None, has_requ
         return dockerfile
     else:
         return dockerfile_str
+
 
 def process_build_log(log):
     """Process docker build log line"""
@@ -110,19 +128,36 @@ def process_build_log(log):
         res += log['status']
         if 'id' in log:
             res += f" ---> {log['id']}"
-        # {'status': 'Pushing', 'progressDetail': {'current': 58119680, 'total': 69212698}, 'progress': '[=========================================>         ]  58.12MB/69.21MB', 'id': 'ffc9b21953f4'}
+
+        """
+        Example log from docker api:
+
+        {'status': 'Pushing',
+         'progressDetail': {
+             'current': 58119680,
+             'total': 69212698
+          },
+          'progress': '[=======> ]  58.12MB/69.21MB',
+          'id': 'ffc9b21953f4'
+        }
+        """
+
         if 'progressDetail' in log and len(log['progressDetail']) > 0:
             res += f" Current: {log['progressDetail']['current']}, "
             if 'total' in log['progressDetail']:
                 res += f" Total: {log['progressDetail']['total']}"
             res += f"\n{log['progress']}"
     if 'aux' in log:
-        res += f"ID: {log['aux'].get('ID')}, Tag: {log['aux'].get('Tag')}, Digest: {log['aux'].get('Digest')}, Size: {log['aux'].get('Size')}"
+        res += f"ID: {log['aux'].get('ID')}, \
+                 Tag: {log['aux'].get('Tag')}, \
+                 Digest: {log['aux'].get('Digest')}, \
+                 Size: {log['aux'].get('Size')}"
 
     if 'error' in log:
         res += f"Error: {log['error']}"
 
     return res
+
 
 def prepare_archive(dockerfile, tmp_code_path, encoding="utf-8", custom_dockerfile=False):
     """
@@ -149,6 +184,7 @@ def prepare_archive(dockerfile, tmp_code_path, encoding="utf-8", custom_dockerfi
     tarstream.seek(0)
     return archive
 
+
 def create_archive(target_dir, tmp_code_path):
     """
     Creates and saves the archive at tmp code path
@@ -163,6 +199,7 @@ def create_archive(target_dir, tmp_code_path):
 
     return archive
 
+
 def retries(max_retry_count, exception_message_prefix, seconds_to_sleep=10):
     for i in range(max_retry_count):
         yield i
@@ -172,6 +209,7 @@ def retries(max_retry_count, exception_message_prefix, seconds_to_sleep=10):
             exception_message_prefix, max_retry_count
         )
     )
+
 
 def service_login(service, tag=None):
     api_client = docker_api_client()
@@ -217,19 +255,24 @@ def build_docker_image(tar_archive, tag, labels, config, encoding="utf-8", custo
     else:
         _, auth_config = service_login("dockerhub")
 
-    # Note: Setting pull: True here will cause the docker daemon to only pull images from dockerhub/remote repo so need to set it to false for using local images...
-    # https://stackoverflow.com/questions/20481225/how-can-i-use-a-local-image-as-the-base-image-with-a-dockerfile
+    """
+    Note: Setting pull: True here will cause the docker
+    daemon to only pull images from dockerhub/remote repo so need to set it to false for using local images...
+
+    Ref: https://stackoverflow.com/questions/20481225/how-can-i-use-a-local-image-as-the-base-image-with-a-dockerfile
+    """
+
     args = {
-        'fileobj': tar_archive.fileobj.getvalue(), 
-        'custom_context': True, 
-        'encoding': encoding, 
-        'tag': tag, 
-        'quiet': False, 
-        'forcerm': True, 
-        'rm': True, 
+        'fileobj': tar_archive.fileobj.getvalue(),
+        'custom_context': True,
+        'encoding': encoding,
+        'tag': tag,
+        'quiet': False,
+        'forcerm': True,
+        'rm': True,
         'decode': True,
         'pull': False
-    } 
+    }
 
     try:
         logs = api_client.build(**args)
@@ -264,6 +307,7 @@ def build_docker_image(tar_archive, tag, labels, config, encoding="utf-8", custo
         module_logger.error("Docker API returns an error: {}".format(e))
         raise e
 
+
 def push_docker_image(service, repository, revision, job_id):
     """
     Pushes built image
@@ -273,7 +317,7 @@ def push_docker_image(service, repository, revision, job_id):
     For ecr, we push using a url type syntax ....
 
     Inputs:
-    service => One of "docker" or "ecr" 
+    service => One of "docker" or "ecr"
     respository => Repository URL e.g. "myproject"
     revision => Repository tag e.g. "latest"
     """
@@ -323,7 +367,7 @@ def push_docker_image(service, repository, revision, job_id):
                 yield res
 
         full_repo_name = "{}:{}".format(repo_name, revision)
-        
+
         logs_cache.append(f"Repository Name: {full_repo_name}")
         send_to_cloudwatch(job_id, logs_cache)
 
@@ -342,6 +386,7 @@ def push_docker_image(service, repository, revision, job_id):
     except RuntimeError as e:
         module_logger.error("Error with pushing image: {}".format(e))
         raise e
+
 
 def remove_image(repository):
     """

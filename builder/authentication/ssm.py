@@ -1,10 +1,8 @@
-import base64
 import json
 import os
 
 import boto3
 from botocore.exceptions import ClientError
-import requests
 
 
 def fetch_local_credentials(service):
@@ -17,7 +15,7 @@ def fetch_local_credentials(service):
         }
     elif service == "ecr":
         auth_config = {
-            "profile_name": os.environ.get("AWS_PROFILE"), 
+            "profile_name": os.environ.get("AWS_PROFILE"),
             "region_name": os.environ.get("AWS_DEFAULT_REGION")
         }
     elif service == "github":
@@ -26,7 +24,7 @@ def fetch_local_credentials(service):
         }
 
     return auth_config
-    
+
 
 def fetch_credentials(service):
     """
@@ -34,7 +32,6 @@ def fetch_credentials(service):
     """
     if os.environ.get("MODE") == "Local":
         return fetch_local_credentials(service)
-
 
     secret_name = os.environ.get("SECRET_NAME")
     region = os.environ.get("AWS_DEFAULT_REGION")
@@ -69,7 +66,7 @@ def fetch_credentials(service):
             }
         else:
             auth_config = {
-                "profile_name": profile, 
+                "profile_name": profile,
                 "region_name": region
             }
     elif service == "github":

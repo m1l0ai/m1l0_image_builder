@@ -21,7 +21,7 @@ setup(
     author_email="ckyeo.1@gmail.com",
     license="MIT",
     packages=find_packages(exclude=[
-        'tests', 
+        'tests',
         'tests.*',
         '__pycache__'
     ]),
@@ -33,11 +33,21 @@ setup(
     },
     install_requires=[
         "docker~=5.0.0",
-        "click==8.0.1",
+        "boto3~=1.14.2",
         "Jinja2~=2.11",
         "grpcio-tools~=1.30",
         "grpc-interceptor==0.12.0",
-        "m1l0-protobufs~=0.9.0"
+        "requests~=2.25.1",
+        "PyGithub~=1.55",
+        "pytest~=5.4.1",
+        "pytest-cov==2.8.1",
+        "flake8~=3.9.2",
+        "flake8-2020~=1.6.0",
+        "moto==1.3.15.dev963",
+        "grpcio-reflection",
+        "grpcio-health-checking",
+        "click==8.0.1",
+        "m1l0_protobufs~=0.9.0"
     ],
     entry_points={
         "console_scripts": [
