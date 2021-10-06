@@ -1,0 +1,23 @@
+version: "3.8"
+networks:
+  default:
+    external:
+      name: m1l0net
+volumes:
+  m1l0-builder:
+    external: true
+    name: m1l0-builder
+
+services:
+  builder:
+    image: m1l0/builder:latest
+    container_name: builder
+    ports:
+      - "50051:50051"
+    volumes:
+      - "./certs:/certs:ro"
+      - "~/.aws:/root/.aws:ro"
+      - "m1l0-builder:/tmp:rw"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    env_file: .env
+    command: ["--secure"]

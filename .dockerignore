@@ -1,0 +1,12 @@
+__pycache__
+.git
+.gitignore
+.env
+.env2
+Makefile
+*.md
+*.cfg
+setup.py
+test*.py
+tests/
+README.md
