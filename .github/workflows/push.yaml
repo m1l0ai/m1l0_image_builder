@@ -33,25 +33,26 @@ jobs:
       - name: Checkout the repo
         uses: actions/checkout@v2
 
+      - name: Extract metadata tags labels for Docker
+        id: meta
+        uses: docker/metadata-action@v3
+        with:
+          images: |
+            m1l0/imagebuilder
+          tags: |
+            type=raw,value=1.0.${{ github.run_number }}
+            type=raw,value=latest,priority=1000
+
       - name: Login to dockerhub
         uses: docker/login-action@v1
         with:
           username: ${{ secrets.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
-      - name: Extract metadata tags labels for Docker
-        id: meta
-        uses: docker/metadata-action@v3
-        with:
-          images: m1l0/imagebuilder
-          tags: |
-            type=raw,value=1.0.${{ github.run_number }},priority=1000
-            type=raw,value=latest
-
       - name: Build and push
         uses: docker/build-push-action@v2
         with:
           context: .
           push: true
-          tags: ${{ steps.meta.output.tags }}
+          tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.output.labels }}
