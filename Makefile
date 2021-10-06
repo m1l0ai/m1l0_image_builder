@@ -15,7 +15,7 @@ create-secrets:
 	aws --profile devs secretsmanager create-secret --name m1l0/creds --secret-string file://ssm.json
 
 build-localimage:
-	docker build --force-rm -t m1l0/builder:latest -f Dockerfile .
+	docker build --force-rm -t m1l0/imagebuilder:latest -f Dockerfile .
 
 build-remoteimage:
 	aws --profile $(AWS_PROFILE) ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin $(ECR_REPO)

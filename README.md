@@ -190,7 +190,7 @@ make build-localimage
 To build and upload the image to ECR:
 ```
 # set AWS_PROFILE, ECR_REPO
-source .env.vars 
+source .env
 
 make build-remoteimage
 ```

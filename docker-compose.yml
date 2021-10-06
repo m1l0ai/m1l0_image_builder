@@ -10,7 +10,7 @@ volumes:
 
 services:
   builder:
-    image: m1l0/builder:latest
+    image: m1l0/imagebuilder:latest
     container_name: builder
     ports:
       - "50051:50051"
